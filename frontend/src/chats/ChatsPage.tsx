@@ -30,7 +30,7 @@ function ChatsPage() {
 
   return (
     <div>
-      <h1>Welcome to Chats</h1>
+      <h1 className="text-2xl font-bold text-green-400">Welcome to Chats</h1>
       <UserButton afterSignOutUrl="/signin" />
       {dbUser && <pre>{JSON.stringify(dbUser, null, 2)}</pre>}
     </div>

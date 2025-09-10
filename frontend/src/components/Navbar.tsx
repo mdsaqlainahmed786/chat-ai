@@ -107,11 +107,11 @@ const Navbar = () => {
               >
                 FAQ
               </a>
-              <div className="px-3 py-2 space-y-2">
-                <Button className="w-full text-gray-900 hover:bg-gray-100 hover:text-purple-500">
+              <div className="-my-1 -mx-1 space-y-2">
+                <Button className="w-full text-gray-900 bg-white flex justify-start hover:bg-gray-100 hover:text-purple-500">
                   Sign In
                 </Button>
-                <button className="px-5 text-lg py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700 shadow-md hover:shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center gap-2">
+                <button className="px-2 mx-3 mb-2 text-xs py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700 shadow-md hover:shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center gap-2">
                   Get Started
                 </button>
               </div>

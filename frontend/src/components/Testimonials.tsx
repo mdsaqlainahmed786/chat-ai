@@ -1,57 +1,180 @@
+import React, { useEffect, useRef, useState } from "react";
 import { Star, Quote } from "lucide-react";
 
-const Testimonials = () => {
+const Testimonials: React.FC = () => {
   const testimonials = [
     {
       name: "Sarah Chen",
       role: "Product Manager",
       company: "TechFlow Inc.",
-      content: "AIChat Pro has revolutionized how our team collaborates. The @AI feature gives us instant insights that would take hours to research manually.",
+      content:
+        "AIChat Pro has revolutionized how our team collaborates. The @AI feature gives us instant insights that would take hours to research manually.",
       rating: 5,
-      avatar: "SC"
+      avatar: "SC",
     },
     {
       name: "Michael Rodriguez",
       role: "Engineering Lead",
       company: "DataStream",
-      content: "The real-time AI responses are incredibly accurate. It's like having a senior expert in every conversation helping solve complex problems.",
+      content:
+        "The real-time AI responses are incredibly accurate. It's like having a senior expert in every conversation helping solve complex problems.",
       rating: 5,
-      avatar: "MR"
+      avatar: "MR",
     },
     {
       name: "Emily Watson",
       role: "Marketing Director",
       company: "GrowthLab",
-      content: "Our team productivity increased by 40% since using AIChat Pro. The AI understands context perfectly and provides relevant suggestions.",
+      content:
+        "Our team productivity increased by 40% since using AIChat Pro. The AI understands context perfectly and provides relevant suggestions.",
       rating: 5,
-      avatar: "EW"
+      avatar: "EW",
     },
     {
       name: "David Kim",
       role: "Startup Founder",
       company: "InnovateCo",
-      content: "As a small team, having AI assistance in our daily conversations is like adding a world-class consultant to every discussion.",
+      content:
+        "As a small team, having AI assistance in our daily conversations is like adding a world-class consultant to every discussion.",
       rating: 5,
-      avatar: "DK"
+      avatar: "DK",
     },
     {
       name: "Lisa Thompson",
       role: "Operations Manager",
       company: "ScaleUp Solutions",
-      content: "The multi-language support is phenomenal. Our global team can now communicate seamlessly with AI helping bridge any gaps.",
+      content:
+        "The multi-language support is phenomenal. Our global team can now communicate seamlessly with AI helping bridge any gaps.",
       rating: 5,
-      avatar: "LT"
+      avatar: "LT",
     },
     {
       name: "Alex Foster",
       role: "Creative Director",
       company: "DesignStudio",
-      content: "AIChat Pro sparks creativity in ways I never expected. The AI suggestions often lead us to breakthrough ideas we wouldn't have found alone.",
+      content:
+        "AIChat Pro sparks creativity in ways I never expected. The AI suggestions often lead us to breakthrough ideas we wouldn't have found alone.",
       rating: 5,
-      avatar: "AF"
-    }
+      avatar: "AF",
+    },
   ];
 
+  // -----------------------
+  // Inline CountUp component
+  // -----------------------
+  type CountUpProps = {
+    end: number;
+    duration?: number; // ms
+    decimals?: number;
+    compact?: boolean;
+    suffix?: string;
+    className?: string;
+    startOnMount?: boolean;
+  };
+
+  function easeOutQuad(t: number) {
+    return t * (2 - t);
+  }
+
+  const CountUp: React.FC<CountUpProps> = ({
+    end,
+    duration = 900,
+    decimals = 0,
+    compact = false,
+    suffix = "",
+    className,
+    startOnMount = false,
+  }) => {
+    const [value, setValue] = useState<number>(0);
+    const ref = useRef<HTMLDivElement | null>(null);
+    const rafRef = useRef<number | null>(null);
+    const startedRef = useRef(false);
+
+    useEffect(() => {
+      if (startOnMount) {
+        start();
+        return cleanup;
+      }
+
+      const el = ref.current;
+      if (!el) return;
+
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting && !startedRef.current) {
+              start();
+            }
+          });
+        },
+        { threshold: 0.3 }
+      );
+
+      io.observe(el);
+      return () => {
+        io.disconnect();
+        cleanup();
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [end, duration, decimals, compact, suffix, startOnMount]);
+
+    function cleanup() {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    }
+
+    function start() {
+      startedRef.current = true;
+      const startTs = performance.now();
+      const initial = 0;
+      const delta = end - initial;
+
+      function step(now: number) {
+        const elapsed = now - startTs;
+        const t = Math.min(1, elapsed / duration);
+        const eased = easeOutQuad(t);
+        const current = initial + delta * eased;
+        setValue(current);
+
+        if (t < 1) {
+          rafRef.current = requestAnimationFrame(step);
+        } else {
+          setValue(end);
+        }
+      }
+
+      rafRef.current = requestAnimationFrame(step);
+    }
+
+    function formatNumber(n: number) {
+      if (compact) {
+        return new Intl.NumberFormat("en", {
+          notation: "compact",
+          maximumFractionDigits: decimals,
+        }).format(n);
+      }
+
+      return new Intl.NumberFormat("en", {
+        maximumFractionDigits: decimals,
+        minimumFractionDigits: decimals,
+      }).format(n);
+    }
+
+    const displayed = decimals > 0 ? Number(value.toFixed(decimals)) : Math.round(value);
+
+    return (
+      <div ref={ref} className={className}>
+        <span aria-hidden>{formatNumber(displayed)}</span>
+        {suffix && <span className="ml-1">{suffix}</span>}
+      </div>
+    );
+  };
+
+  // -----------------------
+  // Testimonials JSX
+  // -----------------------
   return (
     <section id="testimonials" className="py-24 bg-gradient-to-b from-white to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -62,7 +185,10 @@ const Testimonials = () => {
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Loved by Teams
-            <span className="bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent"> Worldwide</span>
+            <span className="bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent">
+              {" "}
+              Worldwide
+            </span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Join thousands of teams who have transformed their communication with AI-powered conversations.
@@ -89,21 +215,15 @@ const Testimonials = () => {
               </div>
 
               {/* Content */}
-              <p className="text-gray-600 mb-6 leading-relaxed">
-                "{testimonial.content}"
-              </p>
+              <p className="text-gray-600 mb-6 leading-relaxed">"{testimonial.content}"</p>
 
               {/* Author */}
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center">
-                  <span className="text-purple-700 font-semibold text-sm">
-                    {testimonial.avatar}
-                  </span>
+                  <span className="text-purple-700 font-semibold text-sm">{testimonial.avatar}</span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">
-                    {testimonial.name}
-                  </h4>
+                  <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
                   <p className="text-sm text-gray-600">
                     {testimonial.role} at {testimonial.company}
                   </p>
@@ -113,22 +233,33 @@ const Testimonials = () => {
           ))}
         </div>
 
-        {/* Stats Section */}
+        {/* Stats Section with in-file CountUp */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-16 border-t border-purple-200">
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">10,000+</div>
+            <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">
+              <CountUp end={10000} duration={1300} decimals={0} compact={false} suffix="+" className="inline" />
+            </div>
             <div className="text-gray-600">Active Teams</div>
           </div>
+
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">500M+</div>
+            <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">
+              <CountUp end={500_000_000} duration={1600} decimals={0} compact={true} suffix="+" className="inline" />
+            </div>
             <div className="text-gray-600">AI Responses</div>
           </div>
+
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">99.9%</div>
+            <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">
+              <CountUp end={99.9} duration={900} decimals={1} compact={false} suffix="%" className="inline" />
+            </div>
             <div className="text-gray-600">Uptime</div>
           </div>
+
           <div className="text-center">
-            <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">4.9★</div>
+            <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">
+              <CountUp end={4.9} duration={900} decimals={1} compact={false} suffix="★" className="inline" />
+            </div>
             <div className="text-gray-600">User Rating</div>
           </div>
         </div>

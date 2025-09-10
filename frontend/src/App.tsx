@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { SignIn, SignUp, SignedIn, SignedOut } from "@clerk/clerk-react";
-import ChatsPage from "./chats/chatsPage";
+import ChatsPage from "./chats/ChatsPage";
 
 function App() {
   return (

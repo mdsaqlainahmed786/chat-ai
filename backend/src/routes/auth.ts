@@ -1,0 +1,59 @@
+// auth.ts
+import express from "express";
+import { createClerkClient, verifyToken } from "@clerk/backend";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+export const authRouter = express.Router();
+
+const clerkClient = createClerkClient({
+    secretKey: process.env.CLERK_SECRET_KEY!,
+});
+
+function getBearerToken(req: express.Request) {
+    const h = req.headers.authorization;
+    if (!h) return null;
+    const m = h.match(/^Bearer (.+)$/);
+    return m ? m[1] : null;
+}
+
+authRouter.get("/authorize", async (req, res) => {
+    try {
+        const token = getBearerToken(req);
+        if (!token) {
+            return res.status(401).json({ error: "Token not found. Call getToken({ template: 'default' }) on client" });
+        }
+        const verified = await verifyToken(token, {
+            secretKey: process.env.CLERK_SECRET_KEY,
+        });
+
+
+        if (!verified || !verified.sub) {
+            console.error("Token not verified or missing sub:", verified);
+            return res.status(401).json({ error: "Token not verified" });
+        }
+
+        const clerkUserId = verified.sub;
+        let user = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+
+        if (!user) {
+            const clerkUser = await clerkClient.users.getUser(clerkUserId);
+            user = await prisma.user.create({
+                data: {
+                    clerkId: clerkUser.id,
+                    email: clerkUser.emailAddresses?.[0]?.emailAddress ?? null,
+                    firstName: clerkUser.firstName ?? null,
+                    lastName: clerkUser.lastName ?? null,
+                    imageUrl: clerkUser.imageUrl ?? null,
+                    provider: (clerkUser.externalAccounts?.length ?? 0) > 0 ? "google" : "email",
+                },
+            });
+        }
+
+        return res.json(user);
+    } catch (err: any) {
+        console.error("ERROR /auth/me verify:", err);
+        const message = err?.message ?? String(err);
+        return res.status(401).json({ error: "Authentication failed", details: message });
+    }
+});

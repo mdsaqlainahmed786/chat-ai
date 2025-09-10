@@ -4,16 +4,20 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx tsc -b && nodemon dist/index.js"
+    "dev": "npx tsc -b && nodemon dist/routes/index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@clerk/backend": "^2.13.0",
+    "@clerk/express": "^1.7.30",
+    "@prisma/client": "^6.15.0",
     "@types/express": "^5.0.3",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
     "nodemon": "^3.1.10",

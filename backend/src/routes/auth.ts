@@ -2,13 +2,13 @@
 import express from "express";
 import { createClerkClient, verifyToken } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
-
 const prisma = new PrismaClient();
 export const authRouter = express.Router();
 
 const clerkClient = createClerkClient({
     secretKey: process.env.CLERK_SECRET_KEY!,
 });
+
 
 function getBearerToken(req: express.Request) {
     const h = req.headers.authorization;
@@ -57,3 +57,5 @@ authRouter.get("/authorize", async (req, res) => {
         return res.status(401).json({ error: "Authentication failed", details: message });
     }
 });
+
+

@@ -1,6 +1,7 @@
 import { UserButton } from "@clerk/clerk-react";
 import { useAuth } from "@clerk/clerk-react";
 import { useState, useEffect } from "react";
+import axios from "axios";
 function ChatsPage() {
   interface User {
     id: string;
@@ -15,9 +16,29 @@ function ChatsPage() {
 
   const { getToken } = useAuth();
 
+const generateUniqueInviteLink = async () => {
+  try {
+    const token = await getToken({ template: "default" }); // fresh token
+    const res = await axios.post(
+      "http://localhost:3000/chat/invite",
+      {}, // no body needed here
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    console.log("Invite link generated:", res.data);
+  } catch (error) {
+    console.error("Error generating invite link:", error);
+  }
+};
+
   useEffect(() => {
     const fetchUser = async () => {
+
       const token = await getToken({ template: "default" }); // fresh token
+      console.log("TOKEN IN CHATSPAGE>>>>", token)
       const res = await fetch("http://localhost:3000/auth/authorize", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -33,6 +54,9 @@ function ChatsPage() {
       <h1 className="text-2xl font-bold text-green-400">Welcome to Chats</h1>
       <UserButton afterSignOutUrl="/signin" />
       {dbUser && <pre>{JSON.stringify(dbUser, null, 2)}</pre>}
+      <button onClick={generateUniqueInviteLink} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+        Generate Invite Link
+      </button>
     </div>
   );
 }

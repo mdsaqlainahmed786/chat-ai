@@ -9,7 +9,6 @@ const app = express()
 app.use(cors())
 app.use(express.json())
 app.use(clerkMiddleware({
-  // allow requests even without audience
   authorizedParties: undefined
 }));
 const PORT = process.env.PORT || 3000

@@ -5,6 +5,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./LandingPage";
 import { SignedIn, SignedOut, SignIn, SignUp } from "@clerk/clerk-react";
 import ChatsPage from "./chats/ChatsPage";
+import Conversation from "./components/Conversation";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
             path="/signin"
             element={<SignIn signUpUrl="/signup" afterSignInUrl="/chats" />}
           />
+          <Route path="/conversation/:id" element={<Conversation conversationId="cmffcum6e00034eegmhcqe2c9" />} />
           <Route
             path="/chats"
             element={

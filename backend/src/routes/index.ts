@@ -2,8 +2,9 @@ import dotenv from "dotenv"
 dotenv.config()
 import { clerkMiddleware } from "@clerk/express"
 import express from "express"
+import http from "http";
 import cors from "cors"
-
+import { initSocketServer } from "../socket";
 import { authRouter } from "./auth"
 import { chatRouter } from "./chat"
 const app = express()
@@ -23,12 +24,9 @@ const PORT = process.env.PORT || 3000
 app.use("/auth", authRouter)
 app.use("/chat", chatRouter)
 
-app.get("/", (req, res) => {
-    res.send("Hello world")
-})
+const server = http.createServer(app);
+const io = initSocketServer(server);
 
-
-
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`)
+server.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`)
 })

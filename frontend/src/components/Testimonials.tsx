@@ -8,7 +8,7 @@ const Testimonials: React.FC = () => {
       role: "Product Manager",
       company: "TechFlow Inc.",
       content:
-        "AIChat Pro has revolutionized how our team collaborates. The @AI feature gives us instant insights that would take hours to research manually.",
+        "ChatAI has revolutionized how our team collaborates. The @AI feature gives us instant insights that would take hours to research manually.",
       rating: 5,
       avatar: "SC",
     },
@@ -26,7 +26,7 @@ const Testimonials: React.FC = () => {
       role: "Marketing Director",
       company: "GrowthLab",
       content:
-        "Our team productivity increased by 40% since using AIChat Pro. The AI understands context perfectly and provides relevant suggestions.",
+        "Our team productivity increased by 40% since using ChatAI. The AI understands context perfectly and provides relevant suggestions.",
       rating: 5,
       avatar: "EW",
     },
@@ -53,7 +53,7 @@ const Testimonials: React.FC = () => {
       role: "Creative Director",
       company: "DesignStudio",
       content:
-        "AIChat Pro sparks creativity in ways I never expected. The AI suggestions often lead us to breakthrough ideas we wouldn't have found alone.",
+        "ChatAI sparks creativity in ways I never expected. The AI suggestions often lead us to breakthrough ideas we wouldn't have found alone.",
       rating: 5,
       avatar: "AF",
     },
@@ -162,7 +162,8 @@ const Testimonials: React.FC = () => {
       }).format(n);
     }
 
-    const displayed = decimals > 0 ? Number(value.toFixed(decimals)) : Math.round(value);
+    const displayed =
+      decimals > 0 ? Number(value.toFixed(decimals)) : Math.round(value);
 
     return (
       <div ref={ref} className={className}>
@@ -176,7 +177,10 @@ const Testimonials: React.FC = () => {
   // Testimonials JSX
   // -----------------------
   return (
-    <section id="testimonials" className="py-24 bg-gradient-to-b from-white to-purple-50">
+    <section
+      id="testimonials"
+      className="py-24 bg-gradient-to-b from-white to-purple-50"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
@@ -191,7 +195,8 @@ const Testimonials: React.FC = () => {
             </span>
           </h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Join thousands of teams who have transformed their communication with AI-powered conversations.
+            Join thousands of teams who have transformed their communication
+            with AI-powered conversations.
           </p>
         </div>
 
@@ -210,20 +215,29 @@ const Testimonials: React.FC = () => {
               {/* Rating */}
               <div className="flex items-center space-x-1 mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 text-yellow-400 fill-current" />
+                  <Star
+                    key={i}
+                    className="w-4 h-4 text-yellow-400 fill-current"
+                  />
                 ))}
               </div>
 
               {/* Content */}
-              <p className="text-gray-600 mb-6 leading-relaxed">"{testimonial.content}"</p>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                "{testimonial.content}"
+              </p>
 
               {/* Author */}
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center">
-                  <span className="text-purple-700 font-semibold text-sm">{testimonial.avatar}</span>
+                  <span className="text-purple-700 font-semibold text-sm">
+                    {testimonial.avatar}
+                  </span>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
+                  <h4 className="font-semibold text-gray-900">
+                    {testimonial.name}
+                  </h4>
                   <p className="text-sm text-gray-600">
                     {testimonial.role} at {testimonial.company}
                   </p>
@@ -237,28 +251,56 @@ const Testimonials: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-16 border-t border-purple-200">
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">
-              <CountUp end={10000} duration={1300} decimals={0} compact={false} suffix="+" className="inline" />
+              <CountUp
+                end={10000}
+                duration={1300}
+                decimals={0}
+                compact={false}
+                suffix="+"
+                className="inline"
+              />
             </div>
             <div className="text-gray-600">Active Teams</div>
           </div>
 
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">
-              <CountUp end={500_000_000} duration={1600} decimals={0} compact={true} suffix="+" className="inline" />
+              <CountUp
+                end={500_000_000}
+                duration={1600}
+                decimals={0}
+                compact={true}
+                suffix="+"
+                className="inline"
+              />
             </div>
             <div className="text-gray-600">AI Responses</div>
           </div>
 
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">
-              <CountUp end={99.9} duration={900} decimals={1} compact={false} suffix="%" className="inline" />
+              <CountUp
+                end={99.9}
+                duration={900}
+                decimals={1}
+                compact={false}
+                suffix="%"
+                className="inline"
+              />
             </div>
             <div className="text-gray-600">Uptime</div>
           </div>
 
           <div className="text-center">
             <div className="text-3xl md:text-4xl font-bold text-purple-500 mb-2">
-              <CountUp end={4.9} duration={900} decimals={1} compact={false} suffix="★" className="inline" />
+              <CountUp
+                end={4.9}
+                duration={900}
+                decimals={1}
+                compact={false}
+                suffix="★"
+                className="inline"
+              />
             </div>
             <div className="text-gray-600">User Rating</div>
           </div>

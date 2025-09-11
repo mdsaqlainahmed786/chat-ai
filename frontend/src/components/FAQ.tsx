@@ -7,36 +7,44 @@ const FAQ = () => {
   const faqs = [
     {
       question: "How does the @AI feature work?",
-      answer: "Simply type '@AI' followed by your question or request in any chat conversation. Our Gemini 2.0 AI will instantly analyze the context and provide intelligent responses that both participants can see in real-time. The AI understands conversation history and provides contextually relevant answers."
+      answer:
+        "Simply type '@AI' followed by your question or request in any chat conversation. Our Gemini 2.0 AI will instantly analyze the context and provide intelligent responses that both participants can see in real-time. The AI understands conversation history and provides contextually relevant answers.",
     },
     {
       question: "What makes Gemini 2.0 different from other AI models?",
-      answer: "Gemini 2.0 offers superior contextual understanding, faster response times, and enhanced reasoning capabilities. It can handle complex conversations, maintain context across multiple exchanges, and provides more accurate and nuanced responses compared to previous AI models."
+      answer:
+        "Gemini 2.0 offers superior contextual understanding, faster response times, and enhanced reasoning capabilities. It can handle complex conversations, maintain context across multiple exchanges, and provides more accurate and nuanced responses compared to previous AI models.",
     },
     {
       question: "Is my conversation data secure and private?",
-      answer: "Absolutely. We use bank-level encryption for all conversations and never store personal chat data permanently. Our AI processes conversations in real-time without retaining sensitive information. We're fully compliant with GDPR, SOC 2, and other major privacy standards."
+      answer:
+        "Absolutely. We use bank-level encryption for all conversations and never store personal chat data permanently. Our AI processes conversations in real-time without retaining sensitive information. We're fully compliant with GDPR, SOC 2, and other major privacy standards.",
     },
     {
       question: "What are the different membership tiers?",
-      answer: "We offer three tiers: Basic (essential AI features for small teams), Standard (advanced features with priority support), and Premium (enterprise-grade with unlimited AI requests, analytics, and custom integrations). Pricing will be announced soon with early-bird discounts for beta users."
+      answer:
+        "We offer three tiers: Basic (essential AI features for small teams), Standard (advanced features with priority support), and Premium (enterprise-grade with unlimited AI requests, analytics, and custom integrations). Pricing will be announced soon with early-bird discounts for beta users.",
     },
     {
-      question: "Can I use AIChat Pro with my existing team tools?",
-      answer: "Yes! AIChat Pro integrates seamlessly with popular platforms like Slack, Microsoft Teams, Discord, and more. You can also use our standalone app or web interface. API access is available for custom integrations with Premium plans."
+      question: "Can I use ChatAI with my existing team tools?",
+      answer:
+        "Yes! ChatAI integrates seamlessly with popular platforms like Slack, Microsoft Teams, Discord, and more. You can also use our standalone app or web interface. API access is available for custom integrations with Premium plans.",
     },
     {
       question: "How accurate are the AI responses?",
-      answer: "Our Gemini 2.0 integration maintains a 95%+ accuracy rate for contextually relevant responses. The AI continuously learns from interactions (while maintaining privacy) and improves its understanding of your team's communication patterns and needs."
+      answer:
+        "Our Gemini 2.0 integration maintains a 95%+ accuracy rate for contextually relevant responses. The AI continuously learns from interactions (while maintaining privacy) and improves its understanding of your team's communication patterns and needs.",
     },
     {
       question: "Is there a free trial available?",
-      answer: "Yes! We offer a 14-day free trial with full access to all Basic tier features. No credit card required to start. You can invite your team and experience the full power of AI-enhanced conversations before committing to a paid plan."
+      answer:
+        "Yes! We offer a 14-day free trial with full access to all Basic tier features. No credit card required to start. You can invite your team and experience the full power of AI-enhanced conversations before committing to a paid plan.",
     },
     {
       question: "What languages does the AI support?",
-      answer: "AIChat Pro supports over 100 languages with native understanding. The AI can seamlessly switch between languages within the same conversation and even help translate or clarify communications between team members speaking different languages."
-    }
+      answer:
+        "ChatAI supports over 100 languages with native understanding. The AI can seamlessly switch between languages within the same conversation and even help translate or clarify communications between team members speaking different languages.",
+    },
   ];
 
   const toggleFAQ = (index: number) => {
@@ -54,10 +62,14 @@ const FAQ = () => {
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
             Frequently Asked
-            <span className="bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent"> Questions</span>
+            <span className="bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent">
+              {" "}
+              Questions
+            </span>
           </h2>
           <p className="text-xl text-gray-600">
-            Everything you need to know about AIChat Pro and our AI-powered conversations.
+            Everything you need to know about ChatAI and our AI-powered
+            conversations.
           </p>
         </div>
 
@@ -83,7 +95,7 @@ const FAQ = () => {
                   )}
                 </div>
               </button>
-              
+
               {openIndex === index && (
                 <div className="px-8 pb-6 border-t border-purple-200">
                   <p className="text-gray-600 leading-relaxed pt-4">

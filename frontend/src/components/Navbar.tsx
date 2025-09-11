@@ -1,9 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-white/20">
@@ -13,7 +15,7 @@ const Navbar = () => {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent">
-                AIChat Pro
+                ChatAI
               </h1>
             </div>
           </div>
@@ -52,8 +54,11 @@ const Navbar = () => {
           <div className="hidden md:block">
             <div className="ml-4 flex items-center space-x-4">
               <Button
+                onClick={() => {
+                  navigate("/signin");
+                }}
                 variant="ghost"
-                className="text-gray-900 hover:bg-gray-100 hover:text-purple-500"
+                className="text-gray-900 cursor-pointer  hover:bg-gray-100 hover:text-purple-500"
               >
                 Sign In
               </Button>
@@ -72,7 +77,7 @@ const Navbar = () => {
           <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="text-gray-900 hover:text-purple-500 transition-colors"
+              className="text-gray-900 cursor-pointer hover:text-purple-500 transition-colors"
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -108,10 +113,15 @@ const Navbar = () => {
                 FAQ
               </a>
               <div className="-my-1 -mx-1 space-y-2">
-                <Button className="w-full text-gray-900 bg-white flex justify-start hover:bg-gray-100 hover:text-purple-500">
+                <Button
+                  onClick={() => {
+                    navigate("/signin");
+                  }}
+                  className="w-full text-gray-900 cursor-pointer bg-white flex justify-start hover:bg-gray-100 hover:text-purple-500"
+                >
                   Sign In
                 </Button>
-                <button className="px-2 mx-3 mb-2 text-xs py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700 shadow-md hover:shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center gap-2">
+                <button className="px-2 mx-3 mb-2 cursor-pointer text-xs py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700 shadow-md hover:shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center gap-2">
                   Get Started
                 </button>
               </div>

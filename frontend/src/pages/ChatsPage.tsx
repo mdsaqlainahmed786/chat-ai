@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, MessageCircle, Users, Copy } from "lucide-react";
+import CreateGroupModal from "@/components/CreateGroupModal"; // new component we'll create
+import { useNavigate } from "react-router-dom";
 
 type DBUser = {
   id: string;
@@ -42,9 +44,42 @@ type Conversation = {
 export default function ChatsPage() {
   const { getToken } = useAuth();
   const [dbUser, setDbUser] = useState<DBUser | null>(null);
-  const [conversations, setConversations] = useState<Conversation[] | null>(null);
+  const [conversations, setConversations] = useState<Conversation[] | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [inviteLoading, setInviteLoading] = useState(false);
+  // add imports at top if not present
+
+  // inside ChatsPage component (add these states)
+  const navigate = useNavigate();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // compute eligible users: unique list of other participants from non-group convs
+  const eligibleUsers: {
+    id: string;
+    clerkId: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    imageUrl?: string | null;
+  }[] = (() => {
+    if (!conversations || !dbUser) return [];
+    const map = new Map<string, any>();
+    for (const conv of conversations) {
+      if (conv.isGroup) continue;
+      const other = conv.participants.find((p) => p.user.id !== dbUser.id);
+      if (other && !map.has(other.user.clerkId)) {
+        map.set(other.user.clerkId, {
+          id: other.user.id,
+          clerkId: other.user.clerkId,
+          firstName: other.user.firstName,
+          lastName: other.user.lastName,
+          imageUrl: other.user.imageUrl,
+        });
+      }
+    }
+    return Array.from(map.values());
+  })();
 
   // Fetch DB user (authorized)
   useEffect(() => {
@@ -140,7 +175,9 @@ export default function ChatsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">Your Chats</h1>
-              <p className="text-purple-100">Stay connected with your conversations</p>
+              <p className="text-purple-100">
+                Stay connected with your conversations
+              </p>
             </div>
             <div className="hidden md:flex items-center space-x-4">
               <MessageCircle className="h-8 w-8 text-purple-200" />
@@ -151,36 +188,70 @@ export default function ChatsPage() {
 
       <div className="max-w-4xl mx-auto px-6 py-8">
         {/* Action Bar */}
+        {/* Action Bar */}
         <Card className="mb-8 border-0 shadow-lg bg-white/70 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-1">Start a new conversation</h2>
-                <p className="text-gray-600 text-sm">Generate an invite link to connect with others</p>
+                <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                  Start a new conversation
+                </h2>
+                <p className="text-gray-600 text-sm">
+                  Generate an invite link to connect with others or create a
+                  group from people you've chatted with
+                </p>
               </div>
-              <Button 
-                onClick={handleInviteLink}
-                disabled={inviteLoading}
-                className="bg-gradient-to-r cursor-pointer from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-              >
-                {inviteLoading ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                ) : (
-                  <Copy className="h-4 w-4 mr-2" />
-                )}
-                Generate Invite Link
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={handleInviteLink}
+                  disabled={inviteLoading}
+                  className="bg-gradient-to-r cursor-pointer from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                >
+                  {inviteLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  ) : (
+                    <Copy className="h-4 w-4 mr-2" />
+                  )}
+                  Generate Invite Link
+                </Button>
+
+                <Button
+                  onClick={() => setShowCreateModal(true)}
+                  variant="ghost"
+                  className="flex items-center gap-2 border rounded px-3 py-2 hover:bg-purple-50"
+                >
+                  <Plus className="h-4 w-4 text-purple-600" />
+                  Create Group
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
 
+        {showCreateModal && (
+          <CreateGroupModal
+            onClose={() => setShowCreateModal(false)}
+            eligibleUsers={eligibleUsers}
+            onCreated={(convId: string) => {
+              setShowCreateModal(false);
+              // navigate to conversation page
+              navigate(`/conversation/${convId}`);
+            }}
+          />
+        )}
+
         {/* Conversations Section */}
         <div>
           <div className="flex items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Recent Conversations</h2>
+            <h2 className="text-2xl font-bold text-gray-900">
+              Recent Conversations
+            </h2>
             <div className="ml-auto flex items-center text-sm text-gray-500">
               {conversations && conversations.length > 0 && (
-                <span>{conversations.length} conversation{conversations.length !== 1 ? 's' : ''}</span>
+                <span>
+                  {conversations.length} conversation
+                  {conversations.length !== 1 ? "s" : ""}
+                </span>
               )}
             </div>
           </div>
@@ -207,9 +278,13 @@ export default function ChatsPage() {
             <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
               <CardContent className="p-12 text-center">
                 <MessageCircle className="h-16 w-16 text-purple-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No conversations yet</h3>
-                <p className="text-gray-600 mb-6">Start your first conversation by generating an invite link</p>
-                <Button 
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  No conversations yet
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Start your first conversation by generating an invite link
+                </p>
+                <Button
                   onClick={handleInviteLink}
                   variant="hero"
                   className="bg-gradient-to-r from-purple-500 to-purple-700"
@@ -247,12 +322,7 @@ export default function ChatsPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                        <Avatar className="w-14 h-14 border-2 border-purple-200 shadow-lg">
-                          <AvatarImage src={avatarUrl} alt={displayName} />
-                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold text-lg">
-                            {(displayName || "U").slice(0, 1).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
+                       <Avatar className="w-14 h-14 border-2 border-purple-200 shadow-lg"> <AvatarImage src={avatarUrl} alt={displayName} /> <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold text-lg"> {(displayName || "U").slice(0, 1).toUpperCase()} </AvatarFallback> </Avatar>
                         {conv.isGroup && (
                           <div className="absolute -bottom-1 -right-1 bg-purple-500 rounded-full p-1">
                             <Users className="h-3 w-3 text-white" />

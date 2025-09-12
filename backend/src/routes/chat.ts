@@ -222,7 +222,7 @@ chatRouter.post("/create-group", async (req: Request, res: Response) => {
       });
 
       if (!commonConv || commonConv.conversation.isGroup) {
-        
+
         const targetUser = users.find((u) => u.id === targetId);
         failedCandidates.push(targetUser?.clerkId ?? targetId);
       }
@@ -235,7 +235,7 @@ chatRouter.post("/create-group", async (req: Request, res: Response) => {
       });
     }
 
-    
+
     const allMemberIds = Array.from(new Set([...targetUserIds, creator.id]));
 
     const created = await prisma.$transaction(async (tx) => {
@@ -266,3 +266,28 @@ chatRouter.post("/create-group", async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Server error" });
   }
 });
+
+chatRouter.delete("/delete-group", async (req, res) => {
+  try {
+    let { userId } = getAuth(req as any);
+    if (!userId) userId = await getUserIdFromRequest(req);
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+    const deleter = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!deleter) return res.status(400).json({ error: "User not found in DB" });
+    const { conversationId } = req.body as { conversationId?: string };
+    if (!conversationId) return res.status(400).json({ error: "conversationId is required" });
+    const conversation = await prisma.conversation.findUnique({ where: { id: conversationId } });
+    if (!conversation) return res.status(404).json({ error: "Conversation not found" });
+    if (!conversation.isGroup) return res.status(400).json({ error: "Not a group conversation" });
+    const isParticipant = await prisma.conversationParticipant.findFirst({
+      where: { conversationId, userId: deleter.id },
+    });
+    if (!isParticipant) return res.status(403).json({ error: "You are not a participant of this group" });
+    await prisma.conversationParticipant.deleteMany({ where: { conversationId } });
+    await prisma.conversation.delete({ where: { id: conversationId },  });
+    return res.json({ message: "Group conversation deleted" });
+  } catch (err: any) {
+    console.error("ERROR /chat/delete-group:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+})

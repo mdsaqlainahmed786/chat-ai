@@ -1,4 +1,10 @@
 import { Button } from "@/components/ui/button";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  UserButton,
+} from "@clerk/clerk-react";
 import { Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +27,7 @@ const Navbar = () => {
           </div>
 
           {/* Desktop Navigation */}
+              <SignedOut>
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-8">
               <a
@@ -49,27 +56,38 @@ const Navbar = () => {
               </a>
             </div>
           </div>
+          </SignedOut>
 
           {/* Desktop CTA */}
           <div className="hidden md:block">
             <div className="ml-4 flex items-center space-x-4">
-              <Button
-                onClick={() => {
-                  navigate("/signin");
-                }}
-                variant="ghost"
-                className="text-gray-900 cursor-pointer  hover:bg-gray-100 hover:text-purple-500"
-              >
-                Sign In
-              </Button>
-              <button
-                className="px-4 text-sm py-2 rounded-xl font-semibold text-white 
-  bg-gradient-to-r from-purple-500 to-purple-700 
-  shadow-md hover:shadow-lg transition-transform duration-300 
-  hover:scale-105 active:scale-95 flex items-center gap-2"
-              >
-                Get Started
-              </button>
+              <SignedOut>
+                <div className="flex items-center gap-3">
+                  <SignInButton>
+                    <Button
+                      variant="ghost"
+                      className="text-gray-900 hover:text-purple-500"
+                    >
+                      Sign In
+                    </Button>
+                  </SignInButton>
+
+                  <button
+                    onClick={() => navigate("/signup")}
+                    className="px-4 text-sm py-2 rounded-xl font-semibold text-white 
+                     bg-gradient-to-r from-purple-500 to-purple-700 
+                     shadow-md hover:shadow-lg transition-transform duration-300 
+                     hover:scale-105 active:scale-95"
+                  >
+                    Get Started
+                  </button>
+                </div>
+              </SignedOut>
+              <SignedIn>
+                <div className="flex items-center">
+                  <UserButton afterSignOutUrl="/signin" />
+                </div>
+              </SignedIn>
             </div>
           </div>
 
@@ -124,6 +142,7 @@ const Navbar = () => {
                 <button className="px-2 mx-3 mb-2 cursor-pointer text-xs py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700 shadow-md hover:shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center gap-2">
                   Get Started
                 </button>
+                <UserButton afterSignOutUrl="/signin" />
               </div>
             </div>
           </div>

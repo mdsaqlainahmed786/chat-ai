@@ -24,17 +24,15 @@ export function useConversationSocket(conversationId?: string) {
 
     const start = async () => {
       try {
-        // get token
+        // get token from Clerk
         const token = await getToken({ template: "default" });
         if (!token) {
           console.warn("No token from Clerk");
           return;
         }
 
-      
         const baseUrl = (import.meta as any).env.VITE_SOCKET_URL || "http://localhost:3000";
 
-        
         const socket: Socket = io(baseUrl, {
           auth: { token },
           transports: ["websocket"],
@@ -43,22 +41,30 @@ export function useConversationSocket(conversationId?: string) {
 
         socketRef.current = socket;
 
-      
+        const handleJoinAck = (res: any) => {
+          if (!mounted) return;
+          if (!res) {
+            console.warn("joinRoom ack missing");
+            return;
+          }
+          if (!res.ok) {
+            console.warn("joinRoom failed:", res.error ?? res);
+            return;
+          }
+          // initialize messages from server
+          // ensure they are sorted ascending by createdAt
+          const serverMessages: Msg[] = Array.isArray(res.messages) ? res.messages : [];
+          serverMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          setMessages(serverMessages);
+        };
+
         socket.on("connect", () => {
           console.log("socket connected", socket.id);
           if (!mounted) return;
           setConnected(true);
 
-          
           if (conversationId) {
-            socket.emit("joinRoom", { conversationId }, (res: any) => {
-              if (!res || !res.ok) {
-                console.warn("joinRoom failed:", res);
-                return;
-              }
-              console.log("joined room", conversationId);
-            
-            });
+            socket.emit("joinRoom", { conversationId }, handleJoinAck);
           }
         });
 
@@ -75,7 +81,15 @@ export function useConversationSocket(conversationId?: string) {
         socket.on("newMessage", (m: Msg) => {
           console.log("newMessage received:", m);
           if (!mounted) return;
-          setMessages((prev) => [...prev, m]);
+
+          setMessages((prev) => {
+            // avoid duplicate messages (same id)
+            if (prev.some((pm) => pm.id === m.id)) return prev;
+            // append and keep chronological order
+            const next = [...prev, m];
+            next.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            return next;
+          });
         });
       } catch (err) {
         console.error("socket start error:", err);
@@ -87,6 +101,10 @@ export function useConversationSocket(conversationId?: string) {
     return () => {
       mounted = false;
       if (socketRef.current) {
+        socketRef.current.off("connect");
+        socketRef.current.off("disconnect");
+        socketRef.current.off("connect_error");
+        socketRef.current.off("newMessage");
         socketRef.current.disconnect();
         socketRef.current = null;
       }

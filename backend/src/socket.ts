@@ -1,4 +1,3 @@
-// src/socket.ts
 import http from "http";
 import { Server as IOServer } from "socket.io";
 import { verifyToken } from "@clerk/backend";
@@ -23,7 +22,7 @@ export function initSocketServer(server: http.Server) {
         return next(new Error("no-auth-token"));
       }
 
-      
+
       const verified = await verifyToken(token, {
         secretKey: process.env.CLERK_SECRET_KEY,
       });
@@ -34,15 +33,15 @@ export function initSocketServer(server: http.Server) {
 
       const clerkUserId = verified.sub;
 
-    
+
       const localUser = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
 
       if (!localUser) {
-        
+
         return next(new Error("user-not-in-db"));
       }
 
-    
+
       socket.data.userId = localUser.id;       // <-- local DB PK (use this for joins/messages)
       socket.data.clerkId = localUser.clerkId; // <-- clerk user id (optional)
       socket.data.user = {
@@ -60,7 +59,7 @@ export function initSocketServer(server: http.Server) {
     }
   });
 
-  
+
   io.engine.on("connection_error", (err) => {
     console.error("engine connection_error:", err);
   });
@@ -77,7 +76,7 @@ export function initSocketServer(server: http.Server) {
         const userId = socket.data.userId as string | undefined;
         if (!userId) return ack?.({ ok: false, error: "not authenticated" });
 
-      
+        // ensure user is a participant
         const participant = await prisma.conversationParticipant.findUnique({
           where: {
             userId_conversationId: { userId, conversationId },
@@ -88,16 +87,43 @@ export function initSocketServer(server: http.Server) {
           return ack?.({ ok: false, error: "not a participant of this conversation" });
         }
 
+        // join socket.io room
         socket.join(conversationId);
         console.log(`user ${userId} joined room ${conversationId}`);
-        return ack?.({ ok: true });
+
+        // Fetch messages from DB in chronological order (old → new)
+        // Consider adding `take`/pagination if you expect many messages.
+        const messages = await prisma.message.findMany({
+          where: { conversationId },
+          include: { sender: true },
+          orderBy: { createdAt: "asc" },
+        });
+
+        const payloadMessages = messages.map((m) => ({
+          id: m.id,
+          conversationId: m.conversationId,
+          content: m.content,
+          imageUrl: m.imageUrl,
+          isAi: m.isAi,
+          createdAt: m.createdAt.toISOString(),
+          sender: {
+            id: m.sender.id,
+            clerkId: m.sender.clerkId,
+            firstName: m.sender.firstName,
+            imageUrl: m.sender.imageUrl,
+          },
+        }));
+
+        // Return messages in the ack so client can initialize state
+        return ack?.({ ok: true, messages: payloadMessages });
       } catch (err: any) {
         console.error("joinRoom error:", err);
         return ack?.({ ok: false, error: "server error" });
       }
     });
 
-    
+
+
     socket.on(
       "sendMessage",
       async (payload: { conversationId: string; content?: string; imageUrl?: string; isAi?: boolean }, ack) => {
@@ -110,8 +136,8 @@ export function initSocketServer(server: http.Server) {
 
           const userId = socket.data.userId as string | undefined;
           if (!userId) return ack?.({ ok: false, error: "not authenticated" });
-          
-        
+
+
           const participant = await prisma.conversationParticipant.findUnique({
             where: {
               userId_conversationId: { userId, conversationId },
@@ -119,7 +145,7 @@ export function initSocketServer(server: http.Server) {
           });
           if (!participant) return ack?.({ ok: false, error: "not a participant" });
 
-        
+
           const message = await prisma.message.create({
             data: {
               conversationId,
@@ -131,7 +157,7 @@ export function initSocketServer(server: http.Server) {
             include: { sender: true },
           });
 
-         
+
           io.to(conversationId).emit("newMessage", {
             id: message.id,
             conversationId: message.conversationId,
@@ -154,6 +180,8 @@ export function initSocketServer(server: http.Server) {
         }
       }
     );
+
+
 
     socket.on("disconnect", (reason) => {
       console.log(`socket disconnected ${socket.id} reason=${reason}`);

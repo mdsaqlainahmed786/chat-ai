@@ -1,5 +1,4 @@
 // src/pages/ChatsPage.tsx
-import { UserButton } from "@clerk/clerk-react";
 import { useAuth } from "@clerk/clerk-react";
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -111,7 +110,6 @@ export default function ChatsPage() {
     <div className="p-4 max-w-xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-green-600">Chats</h1>
-        <UserButton afterSignOutUrl="/signin" />
       </div>
       <button
         onClick={async () => {

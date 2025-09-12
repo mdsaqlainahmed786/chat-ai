@@ -167,7 +167,7 @@ chatRouter.get("/conversations", async (req: Request, res: Response) => {
 });
 
 // POST /chat/create-group
-// Body: { title: string, memberClerkIds: string[] }
+// Body: { title: string, ExistingMemberClerkIds: string[] }
 chatRouter.post("/create-group", async (req: Request, res: Response) => {
   try {
     let { userId } = getAuth(req as any);
@@ -177,19 +177,66 @@ chatRouter.post("/create-group", async (req: Request, res: Response) => {
     const creator = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!creator) return res.status(400).json({ error: "Creator not found in DB" });
 
-    const { title, memberClerkIds } = req.body as { title: string; memberClerkIds: string[] };
+    const { title, ExistingMemberClerkIds } = req.body as {
+      title?: string;
+      ExistingMemberClerkIds?: string[];
+    };
 
-    if (!title || !memberClerkIds || memberClerkIds.length === 0) {
-      return res.status(400).json({ error: "title and memberClerkIds are required" });
+    if (!title || !ExistingMemberClerkIds || !Array.isArray(ExistingMemberClerkIds)) {
+      return res.status(400).json({ error: "title and ExistingMemberClerkIds are required" });
     }
-    const members = await prisma.user.findMany({
-      where: { clerkId: { in: memberClerkIds } },
+    if (ExistingMemberClerkIds.length < 2) {
+      return res
+        .status(400)
+        .json({ error: "You must add at least two existing members to create a group" });
+    }
+
+    const users = await prisma.user.findMany({
+      where: { clerkId: { in: ExistingMemberClerkIds } },
     });
 
-    if (members.length === 0) return res.status(400).json({ error: "No valid members found" });
+    const foundClerkIds = users.map((u) => u.clerkId);
+    const missing = ExistingMemberClerkIds.filter((c) => !foundClerkIds.includes(c));
+    if (missing.length > 0) {
+      return res
+        .status(400)
+        .json({ error: "Some users not found in DB", missing });
+    }
 
-    const allMembers = [...members.map((m) => m.id), creator.id];
-    const uniqueMembers = Array.from(new Set(allMembers));
+    const targetUserIds = users.map((u) => u.id);
+    const failedCandidates: string[] = [];
+
+    for (const targetId of targetUserIds) {
+      const creatorConvs = await prisma.conversationParticipant.findMany({
+        where: { userId: creator.id },
+        select: { conversationId: true },
+      });
+      const creatorConvIds = creatorConvs.map((c) => c.conversationId);
+
+      const commonConv = await prisma.conversationParticipant.findFirst({
+        where: {
+          userId: targetId,
+          conversationId: { in: creatorConvIds },
+        },
+        include: { conversation: true },
+      });
+
+      if (!commonConv || commonConv.conversation.isGroup) {
+        
+        const targetUser = users.find((u) => u.id === targetId);
+        failedCandidates.push(targetUser?.clerkId ?? targetId);
+      }
+    }
+
+    if (failedCandidates.length > 0) {
+      return res.status(400).json({
+        error: "Some users are not eligible: you must have a prior 1:1 conversation with them",
+        failedCandidates,
+      });
+    }
+
+    
+    const allMemberIds = Array.from(new Set([...targetUserIds, creator.id]));
 
     const created = await prisma.$transaction(async (tx) => {
       const conv = await tx.conversation.create({
@@ -198,13 +245,15 @@ chatRouter.post("/create-group", async (req: Request, res: Response) => {
           title,
         },
       });
+
       await tx.conversationParticipant.createMany({
-        data: uniqueMembers.map((uid) => ({
+        data: allMemberIds.map((uid) => ({
           userId: uid,
           conversationId: conv.id,
         })),
         skipDuplicates: true,
       });
+
       return tx.conversation.findUnique({
         where: { id: conv.id },
         include: { participants: { include: { user: true } } },
@@ -214,36 +263,6 @@ chatRouter.post("/create-group", async (req: Request, res: Response) => {
     return res.json({ conversation: created });
   } catch (err: any) {
     console.error("ERROR /chat/create-group:", err);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
-
-// POST /chat/:conversationId/add-member
-// Body: { targetClerkId: string }
-chatRouter.post("/:conversationId/add-member", async (req: Request, res: Response) => {
-  try {
-    const { conversationId } = req.params;
-    let { userId } = getAuth(req as any);
-    if (!userId) userId = await getUserIdFromRequest(req);
-    if (!userId) return res.status(401).json({ error: "Not authenticated" });
-
-    const requester = await prisma.user.findUnique({ where: { clerkId: userId } });
-    if (!requester) return res.status(400).json({ error: "Requester not found" });
-
-    const conversation = await prisma.conversation.findUnique({ where: { id: conversationId } });
-    if (!conversation || !conversation.isGroup) return res.status(404).json({ error: "Group not found" });
-
-    const { targetClerkId } = req.body as { targetClerkId: string };
-    const targetUser = await prisma.user.findUnique({ where: { clerkId: targetClerkId } });
-    if (!targetUser) return res.status(404).json({ error: "Target user not found" });
-
-    await prisma.conversationParticipant.create({
-      data: { userId: targetUser.id, conversationId },
-    });
-
-    return res.json({ ok: true });
-  } catch (err: any) {
-    console.error("ERROR /chat/:conversationId/add-member:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });

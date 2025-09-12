@@ -56,6 +56,7 @@ export default function ChatsPage() {
     expiresAt: string;
   } | null>(null);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"people" | "groups">("people");
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const handleGenerateInvite = async () => {
@@ -170,6 +171,11 @@ export default function ChatsPage() {
     const other = conv.participants.find((p) => p.user.id !== dbUser.id);
     return other ?? null;
   };
+
+  const filteredConversations = conversations?.filter((conv) =>
+  activeTab === "people" ? !conv.isGroup : conv.isGroup
+);
+
 
   const handleInviteLink = async () => {
     setInviteLoading(true);
@@ -289,17 +295,31 @@ export default function ChatsPage() {
 
         {/* Conversations Section */}
         <div>
-          <div className="flex items-center mb-6">
+          <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
               Recent Conversations
             </h2>
-            <div className="ml-auto flex items-center text-sm text-gray-500">
-              {conversations && conversations.length > 0 && (
-                <span>
-                  {conversations.length} conversation
-                  {conversations.length !== 1 ? "s" : ""}
-                </span>
-              )}
+            <div className="flex items-center mb-6 border-b border-gray-200">
+              <button
+                onClick={() => setActiveTab("people")}
+                className={`px-4 cursor-pointer py-2 font-medium text-sm ${
+                  activeTab === "people"
+                    ? "border-b-2 border-purple-600 text-purple-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                People
+              </button>
+              <button
+                onClick={() => setActiveTab("groups")}
+                className={`ml-4 cursor-pointer px-4 py-2 font-medium text-sm ${
+                  activeTab === "groups"
+                    ? "border-b-2 border-purple-600 text-purple-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                Groups
+              </button>
             </div>
           </div>
 
@@ -344,7 +364,9 @@ export default function ChatsPage() {
           )}
 
           <div className="grid gap-4">
-            {conversations?.map((conv) => {
+            
+            {
+            filteredConversations?.map((conv) => {
               const other = getOtherParticipant(conv);
               const displayName = conv.isGroup
                 ? conv.title ?? "Unnamed group"

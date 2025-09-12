@@ -21,7 +21,7 @@ const generateUniqueInviteLink = async () => {
     const token = await getToken({ template: "default" }); // fresh token
     const res = await axios.post(
       "http://localhost:3000/chat/invite",
-      {}, // no body needed here
+      {},
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -48,6 +48,19 @@ const generateUniqueInviteLink = async () => {
 
     fetchUser();
   }, [getToken]);
+
+  useEffect(() => {
+    // fetch all the conversations for this user
+    const fetchConversations = async () => {
+      const token = await getToken({ template: "default" }); // fresh token
+      const res = await fetch("http://localhost:3000/chat/conversations", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      console.log("User's conversations:", data);
+    };
+    fetchConversations();
+  }, []);
 
   return (
     <div>

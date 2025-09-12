@@ -11,6 +11,10 @@ const prisma = new PrismaClient();
 const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY! });
 
 export const chatRouter = Router();
+function makePairKey(a: string, b: string) {
+  return a < b ? `${a}_${b}` : `${b}_${a}`;
+}
+
 
 /**
  * POST /chat/invite
@@ -82,12 +86,12 @@ chatRouter.post("/create-with", async (req: Request, res: Response) => {
       userId = await getUserIdFromRequest(req);
     }
     if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
     const inviter = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!inviter) return res.status(400).json({ error: "Inviter not found in DB. Call /auth/authorize first." });
-    // koi ek chalega nahi daudega
-    const { targetClerkId, targetUserId } = req.body as { targetClerkId?: string; targetUserId?: string };
 
-    let invitee: (Awaited<ReturnType<typeof prisma.user.findUnique>>) | null = null;
+    const { targetClerkId, targetUserId } = req.body as { targetClerkId?: string; targetUserId?: string };
+    let invitee = null;
     if (targetUserId) {
       invitee = await prisma.user.findUnique({ where: { id: targetUserId } });
     } else if (targetClerkId) {
@@ -95,28 +99,27 @@ chatRouter.post("/create-with", async (req: Request, res: Response) => {
     } else {
       return res.status(400).json({ error: "targetClerkId or targetUserId is required" });
     }
+    if (!invitee) return res.status(404).json({ error: "Target user not found in DB." });
+    if (invitee.id === inviter.id) return res.status(400).json({ error: "cannot invite yourself" });
 
-    if (!invitee) {
-      return res.status(404).json({ error: "Target user not found in DB. They must sign up first." });
-    }
-    // if (invitee.id === inviter.id) {
-    //   return res.status(400).json({ error: "Failed! Maybe you have already invited him to a conversation or you can't invite yourself to a conversation numb nut" });
-    // }
+   
+    const pairKey = makePairKey(inviter.id, invitee.id);
 
-    // Find existing 1:1 conversation between inviter & invitee
-    const convs = await prisma.conversation.findMany({
-      where: { isGroup: false },
+    // conversation dhundho with pair key
+    let conversation = await prisma.conversation.findUnique({
+      where: { pairKey },
       include: { participants: true },
     });
-    
-    let conversation = convs.find((c) => {
-      const uids = c.participants.map((p) => p.userId).sort();
-      return uids.length === 2 && uids.includes(inviter.id) && uids.includes(invitee!.id);
-    });
 
+    // If not found, create it in a transaction (and set pairKey)
     if (!conversation) {
       const created = await prisma.$transaction(async (tx) => {
-        const conv = await tx.conversation.create({ data: { isGroup: false } });
+        const conv = await tx.conversation.create({
+          data: {
+            isGroup: false,
+            pairKey,
+          },
+        });
         await tx.conversationParticipant.createMany({
           data: [
             { userId: inviter.id, conversationId: conv.id },

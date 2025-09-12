@@ -3,7 +3,6 @@ import Features from "@/components/Features";
 import GeminiPower from "@/components/GeminiPower";
 import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
-import Footer from "@/components/Footer";
 
 const LandingPage = () => {
   return (
@@ -13,7 +12,6 @@ const LandingPage = () => {
       <GeminiPower />
       <Testimonials />
       <FAQ />
-      <Footer />
     </div>
   );
 };

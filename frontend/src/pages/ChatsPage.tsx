@@ -64,7 +64,7 @@ export default function ChatsPage() {
     imageUrl?: string | null;
   }[] = (() => {
     if (!conversations || !dbUser) return [];
-    const map = new Map<string, any>();
+    const map = new Map<string, { id: string; clerkId: string; firstName?: string | null; lastName?: string | null; imageUrl?: string | null; }>();
     for (const conv of conversations) {
       if (conv.isGroup) continue;
       const other = conv.participants.find((p) => p.user.id !== dbUser.id);

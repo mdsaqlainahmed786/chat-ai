@@ -50,7 +50,7 @@ chatRouter.post("/invite", async (req: Request, res: Response) => {
       },
     });
 
-    const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/join/${token}`;
+    const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/join/${inviter.id}/${inviter.clerkId}`;
 
     return res.json({
       invite: {
@@ -99,9 +99,9 @@ chatRouter.post("/create-with", async (req: Request, res: Response) => {
     if (!invitee) {
       return res.status(404).json({ error: "Target user not found in DB. They must sign up first." });
     }
-    if (invitee.id === inviter.id) {
-      return res.status(400).json({ error: "Failed! Maybe you have already invited him to a conversation or you can't invite yourself to a conversation numb nut" });
-    }
+    // if (invitee.id === inviter.id) {
+    //   return res.status(400).json({ error: "Failed! Maybe you have already invited him to a conversation or you can't invite yourself to a conversation numb nut" });
+    // }
 
     // Find existing 1:1 conversation between inviter & invitee
     const convs = await prisma.conversation.findMany({

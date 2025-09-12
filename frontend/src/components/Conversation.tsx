@@ -1,11 +1,15 @@
 // src/components/Conversation.tsx
-import React, { useState } from "react";
+import { useState } from "react";
 import { useConversationSocket } from "../hooks/useConversation";
-
-export default function Conversation({ conversationId }: { conversationId: string }) {
+import { useParams } from "react-router-dom";
+export default function Conversation() {
+  const { conversationId } = useParams<{ conversationId: string }>();
   const { connected, messages, sendMessage } = useConversationSocket(conversationId);
   const [text, setText] = useState("");
 
+  if (!conversationId) {
+    return <div>No conversation ID provided in URL.</div>;
+  }
   const handleSend = async () => {
     if (!text.trim()) return;
     await sendMessage({ content: text });

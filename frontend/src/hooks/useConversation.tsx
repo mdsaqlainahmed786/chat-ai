@@ -73,6 +73,7 @@ export function useConversationSocket(conversationId?: string) {
         });
 
         socket.on("newMessage", (m: Msg) => {
+          console.log("newMessage received:", m);
           if (!mounted) return;
           setMessages((prev) => [...prev, m]);
         });

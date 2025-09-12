@@ -230,11 +230,9 @@ export default function ChatsPage() {
       </div>
 
       <div className="max-w-4xl mx-auto px-6 py-8">
-        {/* Action Bar */}
-        {/* Action Bar */}
         <Card className="mb-8 border-0 shadow-lg bg-white/70 backdrop-blur-sm">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col items-center justify-between md:flex-row gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-1">
                   Start a new conversation
@@ -248,12 +246,12 @@ export default function ChatsPage() {
                 <Button
                   onClick={handleGenerateInvite}
                   disabled={inviteLoading}
-                  className="bg-gradient-to-r cursor-pointer from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                  className="bg-gradient-to-r px-2 text-xs md:text-md cursor-pointer from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
                 >
                   {inviteLoading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   ) : (
-                    <Copy className="h-4 w-4 mr-2" />
+                    <Copy className="h-4 w-4 mr-0 md:mr-2" />
                   )}
                   Generate Invite Link
                 </Button>
@@ -296,10 +294,10 @@ export default function ChatsPage() {
         {/* Conversations Section */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="hidden text-2xl font-bold text-gray-900 md:block">
               Recent Conversations
             </h2>
-            <div className="flex items-center mb-6 border-b border-gray-200">
+            <div className="flex items-center justify-center max-w-80vw mx-auto mb-6 border-b border-gray-200 md:justify-around">
               <button
                 onClick={() => setActiveTab("people")}
                 className={`px-4 cursor-pointer py-2 font-medium text-sm ${

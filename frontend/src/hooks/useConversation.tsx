@@ -10,7 +10,12 @@ type Msg = {
   imageUrl?: string | null;
   isAi: boolean;
   createdAt: string;
-  sender: { id: string; clerkId?: string | null; firstName?: string | null; imageUrl?: string | null };
+  sender: {
+    id: string;
+    clerkId?: string | null;
+    firstName?: string | null;
+    imageUrl?: string | null;
+  };
 };
 
 export function useConversationSocket(conversationId?: string) {
@@ -31,7 +36,8 @@ export function useConversationSocket(conversationId?: string) {
           return;
         }
 
-        const baseUrl = (import.meta as any).env.VITE_SOCKET_URL || "http://localhost:3000";
+        const baseUrl =
+          import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
 
         const socket: Socket = io(baseUrl, {
           auth: { token },
@@ -40,8 +46,12 @@ export function useConversationSocket(conversationId?: string) {
         });
 
         socketRef.current = socket;
-
-        const handleJoinAck = (res: any) => {
+        interface handleJoinAck {
+          ok: boolean;
+          error?: string;
+          messages?: Msg[];
+        }
+        const handleJoinAck = (res: handleJoinAck | undefined) => {
           if (!mounted) return;
           if (!res) {
             console.warn("joinRoom ack missing");
@@ -53,8 +63,13 @@ export function useConversationSocket(conversationId?: string) {
           }
           // initialize messages from server
           // ensure they are sorted ascending by createdAt
-          const serverMessages: Msg[] = Array.isArray(res.messages) ? res.messages : [];
-          serverMessages.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          const serverMessages: Msg[] = Array.isArray(res.messages)
+            ? res.messages
+            : [];
+          serverMessages.sort(
+            (a, b) =>
+              new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
           setMessages(serverMessages);
         };
 
@@ -87,7 +102,11 @@ export function useConversationSocket(conversationId?: string) {
             if (prev.some((pm) => pm.id === m.id)) return prev;
             // append and keep chronological order
             const next = [...prev, m];
-            next.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+            next.sort(
+              (a, b) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime()
+            );
             return next;
           });
         });
@@ -110,23 +129,37 @@ export function useConversationSocket(conversationId?: string) {
       }
     };
   }, [getToken, conversationId]);
-
-  const sendMessage = async (payload: { content?: string; imageUrl?: string; isAi?: boolean }) => {
+  interface SendMessageResult {
+    ok: boolean;
+    messageId?: string;
+    error?: string;
+  }
+  const sendMessage = async (payload: {
+    content?: string;
+    imageUrl?: string;
+    isAi?: boolean;
+  }) => {
     const socket = socketRef.current;
     if (!socket || !socket.connected) {
       throw new Error("not connected");
     }
 
-    return new Promise<{ ok: boolean; messageId?: string; error?: string }>((resolve) => {
-      socket.emit("sendMessage", { conversationId, ...payload }, (res: any) => {
-        if (!res?.ok) {
-          console.warn("sendMessage error ack:", res);
-          resolve({ ok: false, error: res?.error });
-        } else {
-          resolve({ ok: true, messageId: res.messageId });
-        }
-      });
-    });
+    return new Promise<{ ok: boolean; messageId?: string; error?: string }>(
+      (resolve) => {
+        socket.emit(
+          "sendMessage",
+          { conversationId, ...payload },
+          (res: SendMessageResult) => {
+            if (!res?.ok) {
+              console.warn("sendMessage error ack:", res);
+              resolve({ ok: false, error: res?.error });
+            } else {
+              resolve({ ok: true, messageId: res.messageId });
+            }
+          }
+        );
+      }
+    );
   };
 
   return { connected, messages, sendMessage };

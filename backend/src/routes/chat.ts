@@ -102,7 +102,7 @@ chatRouter.post("/create-with", async (req: Request, res: Response) => {
     if (!invitee) return res.status(404).json({ error: "Target user not found in DB." });
     if (invitee.id === inviter.id) return res.status(400).json({ error: "cannot invite yourself" });
 
-   
+
     const pairKey = makePairKey(inviter.id, invitee.id);
 
     // conversation dhundho with pair key
@@ -135,6 +135,33 @@ chatRouter.post("/create-with", async (req: Request, res: Response) => {
     return res.json({ conversationId: conversation?.id });
   } catch (err: any) {
     console.error("ERROR /chat/create-with:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+chatRouter.get("/conversations", async (req: Request, res: Response) => {
+  try {
+    let { userId } = getAuth(req as any);
+    if (!userId) {
+      userId = await getUserIdFromRequest(req);
+    }
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+    const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!dbUser) return res.status(400).json({ error: "User not found in DB. Call /auth/authorize first." });
+    const conversations = await prisma.conversation.findMany({
+      where: {
+        participants: { some: { userId: dbUser.id } },
+      },
+      include: {
+        participants: {
+          include: { user: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return res.json(conversations);
+  } catch (err: any) {
+    console.error("ERROR /chat/conversations:", err);
     return res.status(500).json({ error: "Server error" });
   }
 });

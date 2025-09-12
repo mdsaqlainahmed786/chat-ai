@@ -103,9 +103,9 @@ export function initSocketServer(server: http.Server) {
       async (payload: { conversationId: string; content?: string; imageUrl?: string; isAi?: boolean }, ack) => {
         try {
           const { conversationId, content, imageUrl, isAi } = payload;
-          console.log("sendMessage payload:", payload);
-          console.log("socket.data:", socket.data);
-          console.log("ConversationId:", conversationId);
+          // console.log("sendMessage payload:", payload);
+          // console.log("socket.data:", socket.data);
+          // console.log("ConversationId:", conversationId);
           if (!conversationId) return ack?.({ ok: false, error: "conversationId required" });
 
           const userId = socket.data.userId as string | undefined;

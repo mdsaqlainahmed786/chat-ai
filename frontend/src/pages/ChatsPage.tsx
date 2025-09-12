@@ -294,10 +294,10 @@ export default function ChatsPage() {
         {/* Conversations Section */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="hidden text-2xl font-bold text-gray-900 md:block">
+            <h2 className="hidden text-2xl font-bold text-gray-900 md:flex">
               Recent Conversations
             </h2>
-            <div className="flex items-center justify-center max-w-80vw mx-auto mb-6 border-b border-gray-200 md:justify-around">
+            <div className="flex items-center justify-center max-w-80vw mb-6 border-b border-gray-200">
               <button
                 onClick={() => setActiveTab("people")}
                 className={`px-4 cursor-pointer py-2 font-medium text-sm ${

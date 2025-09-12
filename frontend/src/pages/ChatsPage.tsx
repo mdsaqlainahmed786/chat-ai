@@ -7,6 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Plus, MessageCircle, Users, Copy } from "lucide-react";
 import CreateGroupModal from "@/components/CreateGroupModal"; // new component we'll create
 import { useNavigate } from "react-router-dom";
+import InviteModal from "@/components/InviteModal";
 
 type DBUser = {
   id: string;
@@ -47,13 +48,40 @@ export default function ChatsPage() {
   const [conversations, setConversations] = useState<Conversation[] | null>(
     null
   );
-  const [loading, setLoading] = useState(true);
   const [inviteLoading, setInviteLoading] = useState(false);
-  // add imports at top if not present
-
-  // inside ChatsPage component (add these states)
+  const [loading, setLoading] = useState(false);
+  const [inviteData, setInviteData] = useState<{
+    token: string;
+    url: string;
+    expiresAt: string;
+  } | null>(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const handleGenerateInvite = async () => {
+    try {
+      setInviteLoading(true);
+      const token = await getToken({ template: "default" });
+      const res = await axios.post(
+        "http://localhost:3000/chat/invite",
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const invite = res.data?.invite;
+      if (!invite) throw new Error("Invalid response from server");
+      setInviteData({
+        token: invite.token,
+        url: invite.url,
+        expiresAt: invite.expiresAt,
+      });
+      setShowInviteModal(true);
+    } catch (err) {
+      console.error("Error generating invite link:", err);
+      alert(err ?? "Failed to generate invite link.");
+    } finally {
+      setInviteLoading(false);
+    }
+  };
 
   // compute eligible users: unique list of other participants from non-group convs
   const eligibleUsers: {
@@ -64,7 +92,16 @@ export default function ChatsPage() {
     imageUrl?: string | null;
   }[] = (() => {
     if (!conversations || !dbUser) return [];
-    const map = new Map<string, { id: string; clerkId: string; firstName?: string | null; lastName?: string | null; imageUrl?: string | null; }>();
+    const map = new Map<
+      string,
+      {
+        id: string;
+        clerkId: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        imageUrl?: string | null;
+      }
+    >();
     for (const conv of conversations) {
       if (conv.isGroup) continue;
       const other = conv.participants.find((p) => p.user.id !== dbUser.id);
@@ -203,7 +240,7 @@ export default function ChatsPage() {
               </div>
               <div className="flex items-center gap-3">
                 <Button
-                  onClick={handleInviteLink}
+                  onClick={handleGenerateInvite}
                   disabled={inviteLoading}
                   className="bg-gradient-to-r cursor-pointer from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
                 >
@@ -218,7 +255,7 @@ export default function ChatsPage() {
                 <Button
                   onClick={() => setShowCreateModal(true)}
                   variant="ghost"
-                  className="flex items-center gap-2 border rounded px-3 py-2 hover:bg-purple-50"
+                  className="flex items-center gap-2 border cursor-pointer rounded px-3 py-2 hover:bg-purple-50 hover:shadow-xl transform hover:scale-105 transition-all duration-300"
                 >
                   <Plus className="h-4 w-4 text-purple-600" />
                   Create Group
@@ -237,6 +274,16 @@ export default function ChatsPage() {
               // navigate to conversation page
               navigate(`/conversation/${convId}`);
             }}
+          />
+        )}
+        {showInviteModal && inviteData && (
+          <InviteModal
+            invite={inviteData}
+            onClose={() => {
+              setShowInviteModal(false);
+              setInviteData(null);
+            }}
+            currentUser={dbUser}
           />
         )}
 
@@ -322,7 +369,16 @@ export default function ChatsPage() {
                   <CardContent className="p-6">
                     <div className="flex items-center gap-4">
                       <div className="relative">
-                       <Avatar className="w-14 h-14 border-2 border-purple-200 shadow-lg"> <AvatarImage src={avatarUrl} alt={displayName} /> <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold text-lg"> {(displayName || "U").slice(0, 1).toUpperCase()} </AvatarFallback> </Avatar>
+                        <Avatar className="w-14 h-14 border-2 border-purple-200 shadow-lg">
+                          {" "}
+                          <AvatarImage src={avatarUrl} alt={displayName} />{" "}
+                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold text-lg">
+                            {" "}
+                            {(displayName || "U")
+                              .slice(0, 1)
+                              .toUpperCase()}{" "}
+                          </AvatarFallback>{" "}
+                        </Avatar>
                         {conv.isGroup && (
                           <div className="absolute -bottom-1 -right-1 bg-purple-500 rounded-full p-1">
                             <Users className="h-3 w-3 text-white" />

@@ -6,20 +6,99 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@clerk/clerk-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Send, Users, Circle } from "lucide-react";
+import axios from "axios";
 
 export default function Conversation() {
+  type ConversationInfo = {
+    id: string;
+    title?: string | null;
+    isGroup: boolean;
+    participants: {
+      user: {
+        id: string;
+        clerkId: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        imageUrl?: string | null;
+      };
+    }[];
+  };
+
+  const [conversationInfo, setConversationInfo] =
+    useState<ConversationInfo | null>(null);
+  const [loadingInfo, setLoadingInfo] = useState(true);
+
+  const { getToken, userId } = useAuth();
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
   const { connected, messages, sendMessage } =
     useConversationSocket(conversationId);
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { userId } = useAuth();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log("USERid:", userId);
   }, [messages]);
+
+  useEffect(() => {
+    if (!conversationId) {
+      setConversationInfo(null);
+      setLoadingInfo(false);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchConversation = async () => {
+      setLoadingInfo(true);
+      const token = await getToken({ template: "default" });
+      if (!token) {
+        console.warn("No token from Clerk");
+        setLoadingInfo(false);
+        return;
+      }
+      try {
+        const res = await axios.get<ConversationInfo[]>(
+          "http://localhost:3000/chat/conversations",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const found = res.data.find((c) => c.id === conversationId) ?? null;
+        if (!cancelled) {
+          setConversationInfo(found);
+        }
+      } catch (err) {
+        console.error("fetchConversation error:", err);
+        if (!cancelled) setConversationInfo(null);
+      } finally {
+        if (!cancelled) setLoadingInfo(false);
+      }
+    };
+
+    fetchConversation();
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId, getToken]);
+
+  let headerName = "Chat Room";
+  let headerAvatar: string | null = null;
+
+  if (conversationInfo) {
+    if (conversationInfo.isGroup) {
+      headerName = conversationInfo.title ?? "Unnamed Group";
+    } else {
+      const other = conversationInfo.participants.find(
+        (p) => p.user.clerkId !== userId
+      )?.user;
+      if (other) {
+        headerName =
+          `${other.firstName ?? ""} ${other.lastName ?? ""}`.trim() ||
+          other.clerkId;
+        headerAvatar = other.imageUrl ?? null;
+      }
+    }
+  }
 
   if (!conversationId) {
     return (
@@ -72,22 +151,42 @@ export default function Conversation() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="font-semibold text-gray-800">Chat Room</h2>
-                  <div className="flex items-center gap-1 text-sm text-gray-500">
-                    <Circle
-                      className={`h-2 w-2 ${
-                        connected
-                          ? "fill-green-500 text-green-500"
-                          : "fill-gray-400 text-gray-400"
-                      }`}
-                    />
-                    {connected ? "Connected" : "Connecting..."}
-                  </div>
-                </div>
+                {loadingInfo ? (
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
+                    <div>
+                      <div className="h-4 bg-gray-200 rounded w-24 mb-1 animate-pulse" />
+                      <div className="h-3 bg-gray-100 rounded w-16 animate-pulse" />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <Avatar className="w-10 h-10 border border-purple-200">
+                      {headerAvatar ? (
+                        <AvatarImage src={headerAvatar} alt={headerName} />
+                      ) : (
+                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold">
+                          {headerName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <div>
+                      <h2 className="font-semibold text-gray-800">
+                        {headerName}
+                      </h2>
+                      <div className="flex items-center gap-1 text-sm text-gray-500">
+                        <Circle
+                          className={`h-2 w-2 ${
+                            connected
+                              ? "fill-green-500 text-green-500"
+                              : "fill-gray-400 text-gray-400"
+                          }`}
+                        />
+                        {connected ? "Online" : "Connecting..."}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -97,7 +196,20 @@ export default function Conversation() {
       {/* Messages Container */}
       <div className="max-w-4xl mx-auto px-4 pb-32">
         <div className="py-6 space-y-4">
-          {messages.length === 0 ? (
+          {loadingInfo ? (
+            // Skeletons for messages
+            <>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+                  <div className="flex-1">
+                    <div className="h-4 bg-gray-200 rounded w-1/3 mb-2 animate-pulse" />
+                    <div className="h-3 bg-gray-100 rounded w-2/3 animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : messages.length === 0 ? (
             <div className="text-center py-16">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 mx-auto mb-4 flex items-center justify-center">
                 <Users className="h-8 w-8 text-purple-500" />
@@ -111,50 +223,22 @@ export default function Conversation() {
             </div>
           ) : (
             messages.map((message) => {
-              console.log("Message:", message.sender.clerkId);
               if (userId === message.sender.clerkId) {
                 return (
                   <div
                     key={message.id}
                     className="flex flex-row-reverse gap-3 group"
                   >
-                    <div className="flex-shrink-0">
-                      {
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={message.sender.imageUrl || undefined}
-                          />
-                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white text-sm">
-                            {(
-                              message.sender.firstName?.[0] ||
-                              message.sender.clerkId![0] ||
-                              "U"
-                            ).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      }
-                    </div>
-
                     <div className="flex-1 min-w-0 -mx-2">
-                      {
+                      {(conversationInfo?.isGroup && (
                         <div className="flex justify-end items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-800 text-sm">
-                            {message.sender.firstName}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(message.createdAt).toLocaleTimeString(
-                              [],
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
+                          <span className="text-sm font-medium text-gray-800">
+                            You
                           </span>
                         </div>
-                      }
-
-                      <div className="bg-purple-400 rounded-2xl px-4 py-3 shadow-sm border border-purple-100 group-hover:shadow-md transition-shadow">
-                        <p className="text-white leading-relaxed">
+                      )) }
+                      <div className="bg-purple-400 rounded-2xl px-4 py-3 shadow-sm border border-purple-100 group-hover:shadow-md transition-shadow max-w-fit ml-auto">
+                        <p className="text-white leading-relaxed text-right">
                           {message.content}
                         </p>
                         {message.imageUrl && (
@@ -167,6 +251,14 @@ export default function Conversation() {
                           </div>
                         )}
                       </div>
+                      <div className="flex justify-end items-center gap-2 mb-1">
+                        <span className="text-xs text-gray-500">
+                          {new Date(message.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -174,41 +266,24 @@ export default function Conversation() {
                 return (
                   <div key={message.id} className="flex gap-3 group">
                     <div className="flex-shrink-0">
-                      {
+                      {conversationInfo?.isGroup && (
                         <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={message.sender.imageUrl || undefined}
-                          />
+                          <AvatarImage src={message.sender.imageUrl || undefined} />
                           <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white text-sm">
-                            {(
-                              message.sender.firstName?.[0] ||
-                              message.sender.clerkId![0] ||
-                              "U"
-                            ).toUpperCase()}
+                            {(message.sender.firstName?.[0] || message.sender.clerkId?.[0] || "U").toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                      }
+                      )}
                     </div>
-
                     <div className="flex-1 min-w-0">
-                      {
+                      {conversationInfo?.isGroup && (
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-800 text-sm">
-                            {message.sender.firstName || message.sender.clerkId}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(message.createdAt).toLocaleTimeString(
-                              [],
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              }
-                            )}
+                          <span className="text-sm font-medium text-gray-800">
+                            {message.sender.firstName ? message.sender.firstName.trim() : message.sender.clerkId}
                           </span>
                         </div>
-                      }
-
-                      <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border border-purple-100 group-hover:shadow-md transition-shadow">
+                      )}
+                      <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border max-w-fit mr-auto border-purple-100 group-hover:shadow-md transition-shadow">
                         <p className="text-gray-800 leading-relaxed">
                           {message.content}
                         </p>
@@ -221,6 +296,14 @@ export default function Conversation() {
                             />
                           </div>
                         )}
+                      </div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-gray-500">
+                          {new Date(message.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
                       </div>
                     </div>
                   </div>

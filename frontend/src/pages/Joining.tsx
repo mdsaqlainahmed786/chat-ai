@@ -1,7 +1,8 @@
-import {useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
+import Navbar from "@/components/Navbar";
 function Joining() {
   const { clerkId } = useParams();
   const { getToken } = useAuth();
@@ -10,7 +11,7 @@ function Joining() {
   useEffect(() => {
     const joinConversation = async () => {
       try {
-        const token = await getToken({ template: "default" }); 
+        const token = await getToken({ template: "default" });
         const response = await axios.post(
           "http://localhost:3000/chat/create-with",
           {
@@ -23,7 +24,7 @@ function Joining() {
           }
         );
         if (response.data.conversationId) {
-            setConversationId(response.data.conversationId);
+          setConversationId(response.data.conversationId);
           navigate(`/conversation/${response.data.conversationId}`);
         }
       } catch (error) {
@@ -35,13 +36,21 @@ function Joining() {
     }
   }, [clerkId]);
 
-  return (<>
-    {conversationId ? (
-      <div>Joining conversation {conversationId}...</div>
-    ) : (
-      <div>Joining...</div>
-    )}
-  </>);
+  return (
+    <>
+      {conversationId ? (
+        <>
+          <Navbar />
+          <div>Joining conversation {conversationId}...</div>
+        </>
+      ) : (
+        <>
+          <Navbar />
+          <div>Joining...</div>
+        </>
+      )}
+    </>
+  );
 }
 
 export default Joining;

@@ -8,6 +8,7 @@ import { Plus, MessageCircle, Users, Copy } from "lucide-react";
 import CreateGroupModal from "@/components/CreateGroupModal"; // new component we'll create
 import { useNavigate } from "react-router-dom";
 import InviteModal from "@/components/InviteModal";
+import Navbar from "@/components/Navbar";
 
 type DBUser = {
   id: string;
@@ -173,9 +174,8 @@ export default function ChatsPage() {
   };
 
   const filteredConversations = conversations?.filter((conv) =>
-  activeTab === "people" ? !conv.isGroup : conv.isGroup
-);
-
+    activeTab === "people" ? !conv.isGroup : conv.isGroup
+  );
 
   const handleInviteLink = async () => {
     setInviteLoading(true);
@@ -202,238 +202,245 @@ export default function ChatsPage() {
 
   if (!dbUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-purple-600 font-medium">Loading user...</p>
+      <>
+        <Navbar />
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <p className="text-purple-600 font-medium">Loading user...</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50">
-      <div className="bg-gradient-to-r from-purple-500 to-purple-700 text-white">
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Your Chats</h1>
-              <p className="text-purple-100">
-                Stay connected with your conversations
-              </p>
-            </div>
-            <div className="hidden md:flex items-center space-x-4">
-              <MessageCircle className="h-8 w-8 text-purple-200" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <Card className="mb-8 border-0 shadow-lg bg-white/70 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <div className="flex flex-col items-center justify-between md:flex-row gap-4">
+    <>
+    <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 pt-16">
+        <div className="bg-gradient-to-r from-purple-500 to-purple-700 text-white">
+          <div className="max-w-4xl mx-auto px-6 py-8">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900 mb-1">
-                  Start a new conversation
-                </h2>
-                <p className="text-gray-600 text-sm">
-                  Generate an invite link to connect with others or create a
-                  group from people you've chatted with
+                <h1 className="text-3xl font-bold mb-2">Your Chats</h1>
+                <p className="text-purple-100">
+                  Stay connected with your conversations
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <Button
-                  onClick={handleGenerateInvite}
-                  disabled={inviteLoading}
-                  className="bg-gradient-to-r px-2 text-xs md:text-md cursor-pointer from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-                >
-                  {inviteLoading ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  ) : (
-                    <Copy className="h-4 w-4 mr-0 md:mr-2" />
-                  )}
-                  Generate Invite Link
-                </Button>
-
-                <Button
-                  onClick={() => setShowCreateModal(true)}
-                  variant="ghost"
-                  className="flex items-center gap-2 border cursor-pointer rounded px-3 py-2 hover:bg-purple-50 hover:shadow-xl transform hover:scale-105 transition-all duration-300"
-                >
-                  <Plus className="h-4 w-4 text-purple-600" />
-                  Create Group
-                </Button>
+              <div className="hidden md:flex items-center space-x-4">
+                <MessageCircle className="h-8 w-8 text-purple-200" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {showCreateModal && (
-          <CreateGroupModal
-            onClose={() => setShowCreateModal(false)}
-            eligibleUsers={eligibleUsers}
-            onCreated={(convId: string) => {
-              setShowCreateModal(false);
-              // navigate to conversation page
-              navigate(`/conversation/${convId}`);
-            }}
-          />
-        )}
-        {showInviteModal && inviteData && (
-          <InviteModal
-            invite={inviteData}
-            onClose={() => {
-              setShowInviteModal(false);
-              setInviteData(null);
-            }}
-            currentUser={dbUser}
-          />
-        )}
-
-        {/* Conversations Section */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="hidden text-2xl font-bold text-gray-900 md:flex">
-              Recent Conversations
-            </h2>
-            <div className="flex items-center justify-center mx-auto mb-6 border-b border-gray-200 md:mx-0">
-              <button
-                onClick={() => setActiveTab("people")}
-                className={`px-4 cursor-pointer py-2 font-medium text-sm ${
-                  activeTab === "people"
-                    ? "border-b-2 border-purple-600 text-purple-600"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                People
-              </button>
-              <button
-                onClick={() => setActiveTab("groups")}
-                className={`ml-4 cursor-pointer px-4 py-2 font-medium text-sm ${
-                  activeTab === "groups"
-                    ? "border-b-2 border-purple-600 text-purple-600"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Groups
-              </button>
             </div>
           </div>
+        </div>
 
-          {loading && (
-            <div className="grid gap-4">
-              {[1, 2, 3].map((i) => (
-                <Card key={i} className="animate-pulse border-0 shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gray-200"></div>
-                      <div className="flex-1">
-                        <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
-                        <div className="h-3 bg-gray-100 rounded w-1/2"></div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <Card className="mb-8 border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+            <CardContent className="p-6">
+              <div className="flex flex-col items-center justify-between md:flex-row gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                    Start a new conversation
+                  </h2>
+                  <p className="text-gray-600 text-sm">
+                    Generate an invite link to connect with others or create a
+                    group from people you've chatted with
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={handleGenerateInvite}
+                    disabled={inviteLoading}
+                    className="bg-gradient-to-r px-2 text-xs md:text-md cursor-pointer from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                  >
+                    {inviteLoading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    ) : (
+                      <Copy className="h-4 w-4 mr-0 md:mr-2" />
+                    )}
+                    Generate Invite Link
+                  </Button>
+
+                  <Button
+                    onClick={() => setShowCreateModal(true)}
+                    variant="ghost"
+                    className="flex items-center gap-2 border cursor-pointer rounded px-3 py-2 hover:bg-purple-50 hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                  >
+                    <Plus className="h-4 w-4 text-purple-600" />
+                    Create Group
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {showCreateModal && (
+            <CreateGroupModal
+              onClose={() => setShowCreateModal(false)}
+              eligibleUsers={eligibleUsers}
+              onCreated={(convId: string) => {
+                setShowCreateModal(false);
+                // navigate to conversation page
+                navigate(`/conversation/${convId}`);
+              }}
+            />
+          )}
+          {showInviteModal && inviteData && (
+            <InviteModal
+              invite={inviteData}
+              onClose={() => {
+                setShowInviteModal(false);
+                setInviteData(null);
+              }}
+              currentUser={dbUser}
+            />
+          )}
+
+          {/* Conversations Section */}
+          <div>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="hidden text-2xl font-bold text-gray-900 md:flex">
+                Recent Conversations
+              </h2>
+              <div className="flex items-center justify-center mx-auto mb-6 border-b border-gray-200 md:mx-0">
+                <button
+                  onClick={() => setActiveTab("people")}
+                  className={`px-4 cursor-pointer py-2 font-medium text-sm ${
+                    activeTab === "people"
+                      ? "border-b-2 border-purple-600 text-purple-600"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  People
+                </button>
+                <button
+                  onClick={() => setActiveTab("groups")}
+                  className={`ml-4 cursor-pointer px-4 py-2 font-medium text-sm ${
+                    activeTab === "groups"
+                      ? "border-b-2 border-purple-600 text-purple-600"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  Groups
+                </button>
+              </div>
             </div>
-          )}
 
-          {!loading && (!conversations || conversations.length === 0) && (
-            <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
-              <CardContent className="p-12 text-center">
-                <MessageCircle className="h-16 w-16 text-purple-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  No conversations yet
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  Start your first conversation by generating an invite link
-                </p>
-                <Button
-                  onClick={handleInviteLink}
-                  variant="hero"
-                  className="bg-gradient-to-r from-purple-500 to-purple-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Chat
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+            {loading && (
+              <div className="grid gap-4">
+                {[1, 2, 3].map((i) => (
+                  <Card key={i} className="animate-pulse border-0 shadow-md">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-full bg-gray-200"></div>
+                        <div className="flex-1">
+                          <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                          <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
 
-          <div className="grid gap-4">
-            
-            {
-            filteredConversations?.map((conv) => {
-              const other = getOtherParticipant(conv);
-              const displayName = conv.isGroup
-                ? conv.title ?? "Unnamed group"
-                : other
-                ? `${other.user.firstName ?? "Unknown"}${
-                    other.user.lastName ? ` ${other.user.lastName}` : ""
-                  }`
-                : "Unknown";
+            {!loading && (!conversations || conversations.length === 0) && (
+              <Card className="border-0 shadow-lg bg-white/70 backdrop-blur-sm">
+                <CardContent className="p-12 text-center">
+                  <MessageCircle className="h-16 w-16 text-purple-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    No conversations yet
+                  </h3>
+                  <p className="text-gray-600 mb-6">
+                    Start your first conversation by generating an invite link
+                  </p>
+                  <Button
+                    onClick={handleInviteLink}
+                    variant="hero"
+                    className="bg-gradient-to-r from-purple-500 to-purple-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Chat
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
 
-              const avatarUrl = conv.isGroup
-                ? undefined
-                : other?.user.imageUrl ?? undefined;
+            <div className="grid gap-4">
+              {filteredConversations?.map((conv) => {
+                const other = getOtherParticipant(conv);
+                const displayName = conv.isGroup
+                  ? conv.title ?? "Unnamed group"
+                  : other
+                  ? `${other.user.firstName ?? "Unknown"}${
+                      other.user.lastName ? ` ${other.user.lastName}` : ""
+                    }`
+                  : "Unknown";
 
-              return (
-                <Card
-                  key={conv.id}
-                  className="cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] border-0 shadow-lg bg-white/70 backdrop-blur-sm hover:bg-white/90"
-                  onClick={() => {
-                    window.location.href = `/conversation/${conv.id}`;
-                  }}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <Avatar className="w-14 h-14 border-2 border-purple-200 shadow-lg">
-                          {" "}
-                          <AvatarImage src={avatarUrl} alt={displayName} />{" "}
-                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold text-lg">
+                const avatarUrl = conv.isGroup
+                  ? undefined
+                  : other?.user.imageUrl ?? undefined;
+
+                return (
+                  <Card
+                    key={conv.id}
+                    className="cursor-pointer hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] border-0 shadow-lg bg-white/70 backdrop-blur-sm hover:bg-white/90"
+                    onClick={() => {
+                      window.location.href = `/conversation/${conv.id}`;
+                    }}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <Avatar className="w-14 h-14 border-2 border-purple-200 shadow-lg">
                             {" "}
-                            {(displayName || "U")
-                              .slice(0, 1)
-                              .toUpperCase()}{" "}
-                          </AvatarFallback>{" "}
-                        </Avatar>
-                        {conv.isGroup && (
-                          <div className="absolute -bottom-1 -right-1 bg-purple-500 rounded-full p-1">
-                            <Users className="h-3 w-3 text-white" />
-                          </div>
-                        )}
-                      </div>
+                            <AvatarImage
+                              src={avatarUrl}
+                              alt={displayName}
+                            />{" "}
+                            <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold text-lg">
+                              {" "}
+                              {(displayName || "U")
+                                .slice(0, 1)
+                                .toUpperCase()}{" "}
+                            </AvatarFallback>{" "}
+                          </Avatar>
+                          {conv.isGroup && (
+                            <div className="absolute -bottom-1 -right-1 bg-purple-500 rounded-full p-1">
+                              <Users className="h-3 w-3 text-white" />
+                            </div>
+                          )}
+                        </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-start mb-1">
-                          <h3 className="font-semibold text-gray-900 truncate text-lg">
-                            {displayName}
-                          </h3>
-                          <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                            {new Date(conv.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-gray-600 truncate">
-                            {conv.isGroup
-                              ? `Group chat • ${conv.participants.length} members`
-                              : `Private conversation`}
-                          </p>
-                          <div className="ml-2 text-purple-400">
-                            <MessageCircle className="h-4 w-4" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between items-start mb-1">
+                            <h3 className="font-semibold text-gray-900 truncate text-lg">
+                              {displayName}
+                            </h3>
+                            <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                              {new Date(conv.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-600 truncate">
+                              {conv.isGroup
+                                ? `Group chat • ${conv.participants.length} members`
+                                : `Private conversation`}
+                            </p>
+                            <div className="ml-2 text-purple-400">
+                              <MessageCircle className="h-4 w-4" />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

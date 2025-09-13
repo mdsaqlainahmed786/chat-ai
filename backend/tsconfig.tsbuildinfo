@@ -1,1 +1,1 @@
-{"root":["./src/socket.ts","./src/routes/auth.ts","./src/routes/chat.ts","./src/routes/index.ts","./src/utils/getuserid.ts"],"version":"5.8.3"}
+{"root":["./src/socket.ts","./src/routes/aimessages.ts","./src/routes/auth.ts","./src/routes/chat.ts","./src/routes/index.ts","./src/utils/getuserid.ts"],"version":"5.8.3"}

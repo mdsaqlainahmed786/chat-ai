@@ -207,7 +207,7 @@ export default function ChatsPage() {
         <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-            <p className="text-purple-600 font-medium">Loading user...</p>
+            <p className="text-purple-600 font-medium">Loading your chats...</p>
           </div>
         </div>
       </>

@@ -284,7 +284,7 @@ chatRouter.delete("/delete-group", async (req, res) => {
     });
     if (!isParticipant) return res.status(403).json({ error: "You are not a participant of this group" });
     await prisma.conversationParticipant.deleteMany({ where: { conversationId } });
-    await prisma.conversation.delete({ where: { id: conversationId },  });
+    await prisma.conversation.delete({ where: { id: conversationId }, });
     return res.json({ message: "Group conversation deleted" });
   } catch (err: any) {
     console.error("ERROR /chat/delete-group:", err);

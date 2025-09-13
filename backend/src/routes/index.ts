@@ -7,6 +7,7 @@ import cors from "cors"
 import { initSocketServer } from "../socket";
 import { authRouter } from "./auth"
 import { chatRouter } from "./chat"
+import { aiMessagesRouter } from "./aiMessages"
 const app = express()
 
 app.use(cors({
@@ -23,6 +24,7 @@ app.use(clerkMiddleware({
 const PORT = process.env.PORT || 3000
 app.use("/auth", authRouter)
 app.use("/chat", chatRouter)
+app.use("/ai", aiMessagesRouter)
 
 const server = http.createServer(app);
 const io = initSocketServer(server);

@@ -172,7 +172,6 @@ export function initSocketServer(server: http.Server) {
               imageUrl: message.sender.imageUrl,
             },
           });
-
           return ack?.({ ok: true, messageId: message.id });
         } catch (err: any) {
           console.error("sendMessage error:", err);

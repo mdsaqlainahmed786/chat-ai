@@ -221,8 +221,8 @@ chatRouter.post("/create-group", async (req: Request, res: Response) => {
         include: { conversation: true },
       });
 
-      if (!commonConv || commonConv.conversation.isGroup) {
 
+      if (!commonConv) {
         const targetUser = users.find((u) => u.id === targetId);
         failedCandidates.push(targetUser?.clerkId ?? targetId);
       }

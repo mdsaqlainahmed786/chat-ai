@@ -21,6 +21,7 @@ model User {
   lastName       String?
   imageUrl       String?
   provider       String? // "google" | "email"
+  inviteLink     String?                   @unique
   membership     Membership?
   membershipId   String?
   membershipPlan MembershipPlan?           @default(BASIC)
@@ -28,7 +29,6 @@ model User {
   createdAt      DateTime                  @default(now())
   updatedAt      DateTime                  @updatedAt
   Message        Message[]
-  Invite         Invite[]
 }
 
 model Membership {
@@ -73,18 +73,6 @@ model Message {
 
   conversation Conversation @relation(fields: [conversationId], references: [id])
   sender       User         @relation(fields: [senderId], references: [id])
-}
-
-model Invite {
-  id             String   @id @default(cuid())
-  token          String   @unique
-  inviterId      String
-  conversationId String? // optional pre-created conversation; if null we create
-  used           Boolean  @default(false)
-  expiresAt      DateTime
-  createdAt      DateTime @default(now())
-
-  inviter User? @relation(fields: [inviterId], references: [id])
 }
 
 enum MembershipPlan {

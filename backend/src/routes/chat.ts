@@ -25,42 +25,36 @@ function makePairKey(a: string, b: string) {
 chatRouter.post("/invite", async (req: Request, res: Response) => {
   try {
     const { userId: authUserId } = getAuth(req as any);
-    console.log("🔸 getAuth userId:", authUserId);
     let clerkUserId = authUserId ?? null;
-
-    // 2) plan B, get the userId from verifyToken not good.
     if (!clerkUserId) {
       clerkUserId = await getUserIdFromRequest(req);
     }
-    console.log("🔸 clerkUserId after fallback:", clerkUserId);
     if (!clerkUserId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
-
     const inviter = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
     if (!inviter) {
       return res.status(400).json({ error: "Inviter not found in DB. Call /auth/authorize first." });
     }
-
-    const expiresInSeconds = Number(req.body?.expiresInSeconds) || 60 * 60 * 24; // 24h default
-    const token = cuid();
-    const expiresAt = new Date(Date.now() + expiresInSeconds * 1000);
-
-    const invite = await prisma.invite.create({
-      data: {
-        token,
-        inviterId: inviter.id,
-        expiresAt,
+    if (inviter.inviteLink) {
+      return res.json({
+        invite: {
+          url: inviter.inviteLink,
+        },
+      });
+    }
+    const inviteLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/join/${inviter.clerkId}`;
+    await prisma.user.update({
+      where: {
+        id: inviter.id,
+        clerkId: clerkUserId
       },
+      data: { inviteLink },
     });
-
-    const inviteUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/join/${inviter.id}/${inviter.clerkId}`;
 
     return res.json({
       invite: {
-        token: invite.token,
-        url: inviteUrl,
-        expiresAt: invite.expiresAt,
+        url: inviteLink
       },
     });
   } catch (err: any) {

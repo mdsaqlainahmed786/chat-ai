@@ -27,7 +27,7 @@ const App = () => (
             element={<SignIn signUpUrl="/signup" afterSignInUrl="/chats" />}
           />
           <Route path="/conversation/:conversationId" element={<Conversation  />} />
-          <Route path="/join/:inviterId/:clerkId" element={<Joining />} />
+          <Route path="/join/:clerkId" element={<Joining />} />
           <Route
             path="/chats"
             element={

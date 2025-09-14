@@ -38,12 +38,10 @@ export default function Conversation() {
     useState<ConversationInfo | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [loadingInfo, setLoadingInfo] = useState(true);
-  const [aiLoading, setAiLoading] = useState(false);
   const { getToken, userId } = useAuth();
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
-  const { connected, messages, aiStreaming } =
-    useConversationSocket(conversationId);
+  const { connected, messages } = useConversationSocket(conversationId);
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -68,7 +66,6 @@ export default function Conversation() {
         return;
       }
       try {
-        setAiLoading(true);
         const res = await axios.get<ConversationInfo[]>(
           "http://localhost:3000/chat/conversations",
           {
@@ -84,7 +81,6 @@ export default function Conversation() {
         if (!cancelled) setConversationInfo(null);
       } finally {
         if (!cancelled) setLoadingInfo(false);
-        setAiLoading(false);
       }
     };
 
@@ -303,16 +299,22 @@ export default function Conversation() {
       {/* Messages Container */}
       <div className="max-w-4xl mx-auto px-4 pb-32">
         <div className="py-6 space-y-4">
-          {aiLoading ? (
-            // Skeletons for messages
+          {loadingInfo ? (
             <>
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
-                  <div className="flex-1">
-                    <div className="h-4 bg-gray-200 rounded w-1/3 mb-2 animate-pulse" />
-                    <div className="h-3 bg-gray-100 rounded w-2/3 animate-pulse" />
-                  </div>
+              {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <div
+                  key={i}
+                  className={`flex ${
+                    i % 2 === 0 ? "justify-start" : "justify-end"
+                  } mb-3`}
+                >
+                  <div
+                    className={`h-6 rounded-2xl animate-pulse ${
+                      i % 2 === 0
+                        ? "bg-gray-200 w-56 h-14"
+                        : "bg-purple-200 w-56 h-14"
+                    }`}
+                  />
                 </div>
               ))}
             </>
@@ -401,41 +403,32 @@ export default function Conversation() {
                           </span>
                         </div>
                       )}
-                      {aiLoading ? (
-                        <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow animate-pulse">
-                          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2 animate-pulse" />
-                          <div className="h-3 bg-gray-100 rounded w-5/6 animate-pulse" />
-                        </div>
-                      ) : (
-                        <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow">
-                          <div className="prose prose-sm text-gray-800 leading-relaxed max-w-none">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {message.content || ""}
-                            </ReactMarkdown>
-                          </div>
 
-                          {message.imageUrl && (
-                            <div className="mt-3">
-                              <img
-                                src={message.imageUrl}
-                                alt="Shared image"
-                                className="max-w-sm rounded-xl border border-purple-100 shadow-sm"
-                              />
-                            </div>
-                          )}
-                          {isStreaming && (
-                            <div className="flex gap-1 mt-2 text-gray-400">
-                              <span className="animate-bounce">●</span>
-                              <span className="animate-bounce delay-150">
-                                ●
-                              </span>
-                              <span className="animate-bounce delay-300">
-                                ●
-                              </span>
-                            </div>
-                          )}
+                      <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow">
+                        <div className="prose prose-sm text-gray-800 leading-relaxed max-w-none">
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {message.content || ""}
+                          </ReactMarkdown>
                         </div>
-                      )}
+
+                        {message.imageUrl && (
+                          <div className="mt-3">
+                            <img
+                              src={message.imageUrl}
+                              alt="Shared image"
+                              className="max-w-sm rounded-xl border border-purple-100 shadow-sm"
+                            />
+                          </div>
+                        )}
+                        {isStreaming && (
+                          <div className="flex gap-1 mt-2 text-gray-400">
+                            <span className="animate-bounce">●</span>
+                            <span className="animate-bounce delay-150">●</span>
+                            <span className="animate-bounce delay-300">●</span>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs text-gray-500">
                           {new Date(message.createdAt).toLocaleTimeString([], {

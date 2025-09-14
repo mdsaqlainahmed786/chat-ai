@@ -17,6 +17,7 @@ import { ArrowLeft, Send, Users, Circle, Trash2 } from "lucide-react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import AiConversationAvatar from "@/components/AiConversationAvatar";
 
 export default function Conversation() {
   type ConversationInfo = {
@@ -212,7 +213,7 @@ export default function Conversation() {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/chats")}
-                className="hover:bg-purple-100"
+                className="hover:bg-purple-100 cursor-pointer"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
@@ -228,7 +229,12 @@ export default function Conversation() {
                 ) : (
                   <>
                     <Avatar className="w-10 h-10 border border-purple-200">
-                      {headerAvatar ? (
+                      {conversationInfo?.title === "AI-Assistant" &&
+                      !conversationInfo.isGroup ? (
+                        <>
+                          <AiConversationAvatar className="pb-4" />
+                        </>
+                      ) : headerAvatar ? (
                         <AvatarImage src={headerAvatar} alt={headerName} />
                       ) : (
                         <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold">
@@ -255,43 +261,44 @@ export default function Conversation() {
                 )}
               </div>
             </div>
-            {conversationInfo?.title === "Assistant" && (
-              <div>
-                <button
-                  onClick={() => setIsDeleteOpen(true)}
-                  className="p-2 rounded-full cursor-pointer hover:bg-gray-100"
-                >
-                  <Trash2 className="h-5 w-5 text-gray-500" />
-                </button>
-                <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-                  <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Delete Conversation</DialogTitle>
-                      <DialogDescription>
-                        Are you sure you want to delete this chat? This action
-                        cannot be undone.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="flex justify-end gap-3">
-                      <Button
-                        className="cursor-pointer"
-                        variant="outline"
-                        onClick={() => setIsDeleteOpen(false)}
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={handleDeleteChat}
-                        className="bg-red-600 cursor-pointer hover:bg-red-700 text-white flex items-center gap-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Chat
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            )}
+            {conversationInfo?.title === "AI-Assistant" &&
+              !conversationInfo.isGroup && (
+                <div>
+                  <button
+                    onClick={() => setIsDeleteOpen(true)}
+                    className="p-2 rounded-full cursor-pointer hover:bg-gray-100"
+                  >
+                    <Trash2 className="h-5 w-5 text-gray-500" />
+                  </button>
+                  <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                    <DialogContent className="sm:max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>Delete Conversation</DialogTitle>
+                        <DialogDescription>
+                          Are you sure you want to delete this chat? This action
+                          cannot be undone.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter className="flex justify-end gap-3">
+                        <Button
+                          className="cursor-pointer"
+                          variant="outline"
+                          onClick={() => setIsDeleteOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleDeleteChat}
+                          className="bg-red-600 cursor-pointer hover:bg-red-700 text-white flex items-center gap-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete Chat
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
           </div>
         </div>
       </div>

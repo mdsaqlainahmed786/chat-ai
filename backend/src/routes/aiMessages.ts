@@ -58,7 +58,7 @@ aiMessagesRouter.post("/message", async (req, res) => {
       take: 50,
     });
     const conversationText = history
-      .map((m) => `${m.isAi ? "Assistant" : m.sender.firstName ?? "User"}: ${m.content ?? ""}`)
+      .map((m) => `${m.isAi ? "AI-Assistant" : m.sender.firstName ?? "User"}: ${m.content ?? ""}`)
       .join("\n");
     const prompt = conversationText + `\nAssistant:`;
 

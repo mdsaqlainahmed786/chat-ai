@@ -123,3 +123,40 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes rgbAura {
+  0% {
+    box-shadow: 
+      0 0 15px rgba(236, 72, 153, 0.7),
+      0 0 30px rgba(147, 51, 234, 0.6),
+      0 0 45px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 
+      0 0 25px rgba(59, 130, 246, 0.7),
+      0 0 40px rgba(236, 72, 153, 0.6),
+      0 0 60px rgba(147, 51, 234, 0.5);
+  }
+  100% {
+    box-shadow: 
+      0 0 15px rgba(236, 72, 153, 0.7),
+      0 0 30px rgba(147, 51, 234, 0.6),
+      0 0 45px rgba(59, 130, 246, 0.5);
+  }
+}
+
+.animate-gradientMove {
+  animation: gradientMove 6s ease infinite;
+}
+
+.animate-rgbAura {
+  animation: rgbAura 5s ease-in-out infinite;
+}
+
+

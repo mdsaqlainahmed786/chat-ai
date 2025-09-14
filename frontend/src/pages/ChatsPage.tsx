@@ -9,6 +9,7 @@ import CreateGroupModal from "@/components/CreateGroupModal"; // new component w
 import { useNavigate } from "react-router-dom";
 import InviteModal from "@/components/InviteModal";
 import Navbar from "@/components/Navbar";
+import AiConversationAvatar from "@/components/AiConversationAvatar";
 
 type DBUser = {
   id: string;
@@ -154,6 +155,7 @@ export default function ChatsPage() {
         if (!res.ok) throw new Error("fetch conversations failed");
         const data: Conversation[] = await res.json();
         if (mounted) setConversations(data);
+        console.log("Fetched conversations:", data);
       } catch (err) {
         console.error("fetchConversations error:", err);
       } finally {
@@ -216,7 +218,7 @@ export default function ChatsPage() {
 
   return (
     <>
-    <Navbar />
+      <Navbar />
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-50 pt-16">
         <div className="bg-gradient-to-r from-purple-500 to-purple-700 text-white">
           <div className="max-w-4xl mx-auto px-6 py-8">
@@ -392,26 +394,23 @@ export default function ChatsPage() {
                     <CardContent className="p-6">
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <Avatar className="w-14 h-14 border-2 border-purple-200 shadow-lg">
-                            {" "}
-                            <AvatarImage
-                              src={avatarUrl}
-                              alt={displayName}
-                            />{" "}
-                            <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold text-lg">
-                              {" "}
-                              {(displayName || "U")
-                                .slice(0, 1)
-                                .toUpperCase()}{" "}
-                            </AvatarFallback>{" "}
-                          </Avatar>
+                          {conv.title === "AI-Assistant" && !conv.isGroup ? (
+                            <AiConversationAvatar />
+                          ) : (
+                            <Avatar className="w-14 h-14 border-2 border-purple-200 shadow-lg">
+                              <AvatarImage src={avatarUrl} alt={displayName} />
+                              <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold text-lg">
+                                {(displayName || "U").slice(0, 1).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          )}
+
                           {conv.isGroup && (
                             <div className="absolute -bottom-1 -right-1 bg-purple-500 rounded-full p-1">
                               <Users className="h-3 w-3 text-white" />
                             </div>
                           )}
                         </div>
-
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-start mb-1">
                             <h3 className="font-semibold text-gray-900 truncate text-lg">

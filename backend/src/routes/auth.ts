@@ -38,7 +38,7 @@ authRouter.get("/authorize", async (req, res) => {
     if (user) {
       const AiConv = await prisma.conversation.findFirst({
         where: {
-          title: "Assistant",
+          title: "AI-Assistant",
           participants: {
             some: { userId: user.id },
           },

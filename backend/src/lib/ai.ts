@@ -12,7 +12,7 @@ export async function ensureAiUser() {
     aiUser = await prisma.user.create({
       data: {
         clerkId: "ai_bot",
-        firstName: "Assistant",
+        firstName: "AI-Assistant",
         email: "assistant@example.com",
         imageUrl: null,
       },
@@ -38,12 +38,12 @@ export async function ensureDefaultAiConversationForUser(userId: string) {
 
   conv = await prisma.conversation.create({
     data: {
-      title: "Assistant",
+      title: "AI-Assistant",
       pairKey,
       isGroup: false,
       participants: {
         create: [
-          { userId }, 
+          { userId },
           { userId: aiUser.id },
         ],
       },

@@ -7,6 +7,8 @@ import { useAuth } from "@clerk/clerk-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ArrowLeft, Send, Users, Circle } from "lucide-react";
 import axios from "axios";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function Conversation() {
   type ConversationInfo = {
@@ -27,11 +29,11 @@ export default function Conversation() {
   const [conversationInfo, setConversationInfo] =
     useState<ConversationInfo | null>(null);
   const [loadingInfo, setLoadingInfo] = useState(true);
-
+  const [aiLoading, setAiLoading] = useState(false);
   const { getToken, userId } = useAuth();
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
-  const { connected, messages, sendMessage } =
+  const { connected, messages } =
     useConversationSocket(conversationId);
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -57,6 +59,7 @@ export default function Conversation() {
         return;
       }
       try {
+        setAiLoading(true);
         const res = await axios.get<ConversationInfo[]>(
           "http://localhost:3000/chat/conversations",
           {
@@ -72,6 +75,7 @@ export default function Conversation() {
         if (!cancelled) setConversationInfo(null);
       } finally {
         if (!cancelled) setLoadingInfo(false);
+        setAiLoading(false);
       }
     };
 
@@ -123,9 +127,41 @@ export default function Conversation() {
   }
 
   const handleSend = async () => {
-    if (!text.trim()) return;
-    await sendMessage({ content: text });
+    if (!text.trim() || !conversationId) return;
+
+    const content = text.trim();
     setText("");
+
+    try {
+
+      // 2) trigger server-side AI generation (Gemini) — server will save & emit AI reply
+      // Get clerk token for auth
+      const token = await getToken({ template: "default" });
+      if (!token) {
+        console.warn("No token available for AI call");
+        return;
+      }
+
+      axios
+        .post(
+          `${
+            import.meta.env.VITE_API_BASE || "http://localhost:3000"
+          }/ai/message`,
+          { conversationId, content },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        .then((res) => {
+          // Optional: you can inspect res.data.aiMessage if you want
+          if (!res.data?.ok) {
+            console.warn("AI endpoint responded with error:", res.data);
+          }
+        })
+        .catch((err) => {
+          console.error("AI call failed:", err);
+        });
+    } catch (err) {
+      console.error("sendMessage failed:", err);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -196,7 +232,7 @@ export default function Conversation() {
       {/* Messages Container */}
       <div className="max-w-4xl mx-auto px-4 pb-32">
         <div className="py-6 space-y-4">
-          {loadingInfo ? (
+          {aiLoading ? (
             // Skeletons for messages
             <>
               {[1, 2, 3].map((i) => (
@@ -230,13 +266,13 @@ export default function Conversation() {
                     className="flex flex-row-reverse gap-3 group"
                   >
                     <div className="flex-1 min-w-0 -mx-2">
-                      {(conversationInfo?.isGroup && (
+                      {conversationInfo?.isGroup && (
                         <div className="flex justify-end items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-gray-800">
                             You
                           </span>
                         </div>
-                      )) }
+                      )}
                       <div className="bg-purple-400 rounded-2xl px-4 py-3 shadow-sm border border-purple-100 group-hover:shadow-md transition-shadow max-w-fit ml-auto">
                         <p className="text-white leading-relaxed text-right">
                           {message.content}
@@ -268,9 +304,15 @@ export default function Conversation() {
                     <div className="flex-shrink-0">
                       {conversationInfo?.isGroup && (
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={message.sender.imageUrl || undefined} />
+                          <AvatarImage
+                            src={message.sender.imageUrl || undefined}
+                          />
                           <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white text-sm">
-                            {(message.sender.firstName?.[0] || message.sender.clerkId?.[0] || "U").toUpperCase()}
+                            {(
+                              message.sender.firstName?.[0] ||
+                              message.sender.clerkId?.[0] ||
+                              "U"
+                            ).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                       )}
@@ -279,24 +321,36 @@ export default function Conversation() {
                       {conversationInfo?.isGroup && (
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-gray-800">
-                            {message.sender.firstName ? message.sender.firstName.trim() : message.sender.clerkId}
+                            {message.sender.firstName
+                              ? message.sender.firstName.trim()
+                              : message.sender.clerkId}
                           </span>
                         </div>
                       )}
-                      <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border max-w-fit mr-auto border-purple-100 group-hover:shadow-md transition-shadow">
-                        <p className="text-gray-800 leading-relaxed">
-                          {message.content}
-                        </p>
-                        {message.imageUrl && (
-                          <div className="mt-3">
-                            <img
-                              src={message.imageUrl}
-                              alt="Shared image"
-                              className="max-w-sm rounded-xl border border-purple-100 shadow-sm"
-                            />
+                      {aiLoading ? (
+                        <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow animate-pulse">
+                          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2 animate-pulse" />
+                          <div className="h-3 bg-gray-100 rounded w-5/6 animate-pulse" />
+                        </div>
+                      ) : (
+                        <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow">
+                          <div className="prose prose-sm text-gray-800 leading-relaxed max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {message.content || ""}
+                            </ReactMarkdown>
                           </div>
-                        )}
-                      </div>
+
+                          {message.imageUrl && (
+                            <div className="mt-3">
+                              <img
+                                src={message.imageUrl}
+                                alt="Shared image"
+                                className="max-w-sm rounded-xl border border-purple-100 shadow-sm"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs text-gray-500">
                           {new Date(message.createdAt).toLocaleTimeString([], {

@@ -17,6 +17,7 @@ app.use(cors({
   exposedHeaders: ["Authorization"]
 }));
 
+
 app.use(express.json())
 app.use(clerkMiddleware({
   authorizedParties: undefined
@@ -28,6 +29,7 @@ app.use("/ai", aiMessagesRouter)
 
 const server = http.createServer(app);
 const io = initSocketServer(server);
+app.set("io", io);
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`)

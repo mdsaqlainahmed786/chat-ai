@@ -303,7 +303,6 @@ export default function Conversation() {
         </div>
       </div>
 
-      {/* Messages Container */}
       <div className="max-w-4xl mx-auto px-4 pb-32">
         <div className="py-6 space-y-4">
           {loadingInfo ? (
@@ -357,9 +356,20 @@ export default function Conversation() {
                         </div>
                       )}
                       <div className="bg-purple-400 rounded-2xl px-4 py-3 shadow-sm border border-purple-100 group-hover:shadow-md transition-shadow max-w-fit ml-auto">
-                        <p className="text-white leading-relaxed text-right">
-                          {message.content}
-                        </p>
+                        <div className="text-white flex flex-row justify-end text-end gap-2 prose prose-sm max-w-none leading-relaxed">
+                          <p className="leading-relaxed"> {message.content}</p>
+                          <div className="flex items-end gap-2 -mb-1 -mr-2">
+                            <span className="text-xs text-slate-300">
+                              {new Date(message.createdAt).toLocaleTimeString(
+                                [],
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }
+                              )}
+                            </span>
+                          </div>
+                        </div>
                         {message.imageUrl && (
                           <div className="mt-3">
                             <img
@@ -369,82 +379,46 @@ export default function Conversation() {
                             />
                           </div>
                         )}
-                      </div>
-                      <div className="flex justify-end items-center gap-2 mb-1">
-                        <span className="text-xs text-gray-500">
-                          {new Date(message.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
                       </div>
                     </div>
                   </div>
                 );
               } else {
                 return (
-                  <div key={message.id} className="flex gap-3 group">
-                    <div className="flex-shrink-0">
-                      {conversationInfo?.isGroup && (
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={message.sender.imageUrl || undefined}
-                          />
-                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white text-sm">
-                            {(
-                              message.sender.firstName?.[0] ||
-                              message.sender.clerkId?.[0] ||
-                              "U"
-                            ).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      {conversationInfo?.isGroup && (
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-gray-800">
-                            {message.sender.firstName
-                              ? message.sender.firstName.trim()
-                              : message.sender.clerkId}
-                          </span>
-                        </div>
-                      )}
-
-                      <div className="bg-white rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow">
-                        <div className="prose prose-sm text-gray-800 leading-relaxed max-w-none">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {message.content || ""}
-                          </ReactMarkdown>
-                        </div>
-
-                        {message.imageUrl && (
-                          <div className="mt-3">
-                            <img
-                              src={message.imageUrl}
-                              alt="Shared image"
-                              className="max-w-sm rounded-xl border border-purple-100 shadow-sm"
-                            />
-                          </div>
-                        )}
-                        {isStreaming && (
-                          <div className="flex gap-1 mt-2 text-gray-400">
-                            <span className="animate-bounce">●</span>
-                            <span className="animate-bounce delay-150">●</span>
-                            <span className="animate-bounce delay-300">●</span>
-                          </div>
-                        )}
+                  <div
+                    className={`bg-white rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow`}
+                  >
+                    <div className="flex items-end gap-2">
+                      <div className="prose prose-sm text-gray-800 leading-relaxed max-w-none">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content || ""}
+                        </ReactMarkdown>
                       </div>
-
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs text-gray-500">
+                      {!isStreaming && (
+                        <span className="text-xs text-gray-500 whitespace-nowrap -mb-2">
                           {new Date(message.createdAt).toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}
                         </span>
-                      </div>
+                      )}
                     </div>
+                    {message.imageUrl && (
+                      <div className="mt-3">
+                        <img
+                          src={message.imageUrl}
+                          alt="Shared image"
+                          className="max-w-sm rounded-xl border border-purple-100 shadow-sm"
+                        />
+                      </div>
+                    )}
+                    {isStreaming && (
+                      <div className="flex gap-1 mt-2 text-gray-400">
+                        <span className="animate-bounce">●</span>
+                        <span className="animate-bounce delay-150">●</span>
+                        <span className="animate-bounce delay-300">●</span>
+                      </div>
+                    )}
                   </div>
                 );
               }

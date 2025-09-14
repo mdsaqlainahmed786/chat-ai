@@ -35,6 +35,24 @@ authRouter.get("/authorize", async (req, res) => {
 
     const clerkUserId = verified.sub;
     let user = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
+    if (user) {
+      const AiConv = await prisma.conversation.findFirst({
+        where: {
+          title: "Assistant",
+          participants: {
+            some: { userId: user.id },
+          },
+        },
+      });
+      if (!AiConv) {
+        try {
+          await ensureDefaultAiConversationForUser(user.id);
+        }
+        catch (err) {
+          console.error("Failed to initialize AI conversation for user:", user.id, err);
+        }
+      }
+    }
 
     if (!user) {
       const clerkUser = await clerkClient.users.getUser(clerkUserId);

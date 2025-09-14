@@ -5,7 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@clerk/clerk-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ArrowLeft, Send, Users, Circle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { ArrowLeft, Send, Users, Circle, Trash2 } from "lucide-react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -28,12 +36,13 @@ export default function Conversation() {
 
   const [conversationInfo, setConversationInfo] =
     useState<ConversationInfo | null>(null);
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [loadingInfo, setLoadingInfo] = useState(true);
   const [aiLoading, setAiLoading] = useState(false);
   const { getToken, userId } = useAuth();
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
-  const { connected, messages } =
+  const { connected, messages, aiStreaming } =
     useConversationSocket(conversationId);
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -89,6 +98,7 @@ export default function Conversation() {
   let headerAvatar: string | null = null;
 
   if (conversationInfo) {
+    // console.log("Conversation Info:", conversationInfo);
     if (conversationInfo.isGroup) {
       headerName = conversationInfo.title ?? "Unnamed Group";
     } else {
@@ -133,9 +143,6 @@ export default function Conversation() {
     setText("");
 
     try {
-
-      // 2) trigger server-side AI generation (Gemini) — server will save & emit AI reply
-      // Get clerk token for auth
       const token = await getToken({ template: "default" });
       if (!token) {
         console.warn("No token available for AI call");
@@ -151,7 +158,6 @@ export default function Conversation() {
           { headers: { Authorization: `Bearer ${token}` } }
         )
         .then((res) => {
-          // Optional: you can inspect res.data.aiMessage if you want
           if (!res.data?.ok) {
             console.warn("AI endpoint responded with error:", res.data);
           }
@@ -161,6 +167,34 @@ export default function Conversation() {
         });
     } catch (err) {
       console.error("sendMessage failed:", err);
+    }
+  };
+  const handleDeleteChat = async () => {
+    if (!conversationId) return;
+    try {
+      const token = await getToken({ template: "default" });
+      if (!token) {
+        console.warn("No token from Clerk");
+        return;
+      }
+      const res = await axios.delete(
+        `${
+          import.meta.env.VITE_API_BASE || "http://localhost:3000"
+        }/ai/delete-chat-history`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          data: { conversationId },
+        }
+      );
+      if (res.data?.ok) {
+        console.log("Chat history deleted successfully");
+        setIsDeleteOpen(false);
+        navigate("/chats");
+      } else {
+        console.warn("Failed to delete chat history:", res.data);
+      }
+    } catch (err) {
+      console.error("Error deleting chat history:", err);
     }
   };
 
@@ -186,7 +220,7 @@ export default function Conversation() {
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div className="flex items-center gap-3">
+              <div className="flex justify-between items-center gap-3">
                 {loadingInfo ? (
                   <>
                     <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
@@ -225,6 +259,43 @@ export default function Conversation() {
                 )}
               </div>
             </div>
+            {conversationInfo?.title === "Assistant" && (
+              <div>
+                <button
+                  onClick={() => setIsDeleteOpen(true)}
+                  className="p-2 rounded-full cursor-pointer hover:bg-gray-100"
+                >
+                  <Trash2 className="h-5 w-5 text-gray-500" />
+                </button>
+                <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Delete Conversation</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to delete this chat? This action
+                        cannot be undone.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex justify-end gap-3">
+                      <Button
+                        className="cursor-pointer"
+                        variant="outline"
+                        onClick={() => setIsDeleteOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleDeleteChat}
+                        className="bg-red-600 cursor-pointer hover:bg-red-700 text-white flex items-center gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Chat
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -246,20 +317,23 @@ export default function Conversation() {
               ))}
             </>
           ) : messages.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 mx-auto mb-4 flex items-center justify-center">
-                <Users className="h-8 w-8 text-purple-500" />
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 mx-auto mb-4 flex items-center justify-center">
+                  <Users className="h-8 w-8 text-purple-500" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-800 mb-2">
+                  Start the conversation
+                </h3>
+                <p className="text-gray-600">
+                  Send your first message to get started!
+                </p>
               </div>
-              <h3 className="text-lg font-medium text-gray-800 mb-2">
-                Start the conversation
-              </h3>
-              <p className="text-gray-600">
-                Send your first message to get started!
-              </p>
             </div>
           ) : (
             messages.map((message) => {
-              if (userId === message.sender.clerkId) {
+              const isStreaming = message.temp;
+              if (userId === message?.sender?.clerkId) {
                 return (
                   <div
                     key={message.id}
@@ -347,6 +421,17 @@ export default function Conversation() {
                                 alt="Shared image"
                                 className="max-w-sm rounded-xl border border-purple-100 shadow-sm"
                               />
+                            </div>
+                          )}
+                          {isStreaming && (
+                            <div className="flex gap-1 mt-2 text-gray-400">
+                              <span className="animate-bounce">●</span>
+                              <span className="animate-bounce delay-150">
+                                ●
+                              </span>
+                              <span className="animate-bounce delay-300">
+                                ●
+                              </span>
                             </div>
                           )}
                         </div>

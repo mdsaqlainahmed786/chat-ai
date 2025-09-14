@@ -16,11 +16,13 @@ type Msg = {
     firstName?: string | null;
     imageUrl?: string | null;
   };
+  temp?: boolean; // Add temp as optional property
 };
 
 export function useConversationSocket(conversationId?: string) {
   const { getToken } = useAuth();
   const socketRef = useRef<Socket | null>(null);
+  const [aiStreaming, setAiStreaming] = useState(false);
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
 
@@ -29,7 +31,6 @@ export function useConversationSocket(conversationId?: string) {
 
     const start = async () => {
       try {
-        // get token from Clerk
         const token = await getToken({ template: "default" });
         if (!token) {
           console.warn("No token from Clerk");
@@ -92,16 +93,28 @@ export function useConversationSocket(conversationId?: string) {
         socket.on("connect_error", (err) => {
           console.error("socket connect_error:", err);
         });
+        socket.on("aiStream", (m: Msg & { temp?: boolean }) => {
+          if (!mounted) return;
+          setAiStreaming(true);
 
+          setMessages((prev) => {
+            const existing = prev.find((pm) => pm.isAi && pm.temp);
+            if (existing) {
+              return prev.map((pm) =>
+                pm.isAi && pm.temp ? { ...pm, content: m.content } : pm
+              );
+            }
+            return [...prev, m];
+          });
+        });
         socket.on("newMessage", (m: Msg) => {
           console.log("newMessage received:", m);
           if (!mounted) return;
 
           setMessages((prev) => {
-            // avoid duplicate messages (same id)
-            if (prev.some((pm) => pm.id === m.id)) return prev;
-            // append and keep chronological order
-            const next = [...prev, m];
+            const filtered = prev.filter((pm) => !(pm.isAi && pm.temp));
+            if (filtered.some((pm) => pm.id === m.id)) return filtered;
+            const next = [...filtered, m];
             next.sort(
               (a, b) =>
                 new Date(a.createdAt).getTime() -
@@ -162,5 +175,5 @@ export function useConversationSocket(conversationId?: string) {
     );
   };
 
-  return { connected, messages, sendMessage };
+ return { connected, messages, sendMessage, aiStreaming };
 }

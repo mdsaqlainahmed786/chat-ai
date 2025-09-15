@@ -481,7 +481,7 @@ export default function Conversation() {
                         </div>
                       )}
                       <div
-                        className={`rounded-2xl p-[3.5px] overflow-x-auto w-fit max-w-prose group-hover:shadow-md transition-shadow
+                        className={`rounded-2xl p-[3.5px] w-fit max-w-prose group-hover:shadow-md transition-shadow
     ${
       message.isAi
         ? aiConversationPairKey?.startsWith("ai")
@@ -495,7 +495,7 @@ export default function Conversation() {
                       >
                         {/* Inner box */}
                         <div
-                          className={`rounded-2xl px-4 py-3 bg-white w-full ${
+                          className={`rounded-2xl overflow-x-auto px-4 py-3 bg-white w-full ${
                             message.isAi &&
                             !aiConversationPairKey?.startsWith("ai")
                               ? "text-gray-900"

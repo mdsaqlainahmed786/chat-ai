@@ -482,7 +482,7 @@ export default function Conversation() {
                         </div>
                       )}
                       <div
-                        className={`bg-white rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose border-purple-100 group-hover:shadow-md transition-shadow ${
+                        className={`bg-white rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose border-purple-100 group-hover:shadow-md overflow-x-scroll transition-shadow ${
                           message.isAi
                             ? aiConversationPairKey?.startsWith("ai")
                               ? "ml-0 mr-auto"

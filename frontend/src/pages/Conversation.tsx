@@ -564,8 +564,8 @@ export default function Conversation() {
               <div className="relative">
                 <img
                   src={previewUrl}
-                  alt="Shared image"
-                  className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-xl border border-purple-100 shadow-sm object-cover"
+                  alt="Preview"
+                  className="h-20 w-20 object-cover rounded-lg border"
                 />
 
                 <button
@@ -580,14 +580,14 @@ export default function Conversation() {
               </div>
             </div>
           ) : (
-            // 🔹 Normal Input Mode
             <>
-              {/* Image upload button */}
               <Button
                 type="button"
                 size="icon"
                 variant="ghost"
-                className="h-12 w-12 rounded-2xl"
+                className={`h-12 w-12 rounded-2xl ${
+                  aiConversationPairKey?.startsWith("ai") ? "hidden" : ""
+                }`}
                 onClick={() => fileInputRef.current?.click()}
               >
                 <ImageIcon className="h-5 w-5 text-purple-600" />

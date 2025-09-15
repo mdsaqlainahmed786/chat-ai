@@ -46,10 +46,11 @@ export default function CreateGroupModal({
     }
 
     setLoading(true);
+    const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
     try {
       const token = await getToken({ template: "default" });
       const res = await axios.post(
-        "http://localhost:3000/chat/create-group",
+        `${baseUrl}/chat/create-group`,
         { title, ExistingMemberClerkIds: selectedClerkIds },
         { headers: { Authorization: `Bearer ${token}` } }
       );

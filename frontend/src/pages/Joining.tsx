@@ -11,9 +11,10 @@ function Joining() {
   useEffect(() => {
     const joinConversation = async () => {
       try {
+        const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
         const token = await getToken({ template: "default" });
         const response = await axios.post(
-          "http://localhost:3000/chat/create-with",
+          `${baseUrl}/chat/create-with`,
           {
             targetClerkId: clerkId,
           },

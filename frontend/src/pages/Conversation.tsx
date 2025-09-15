@@ -75,9 +75,10 @@ export default function Conversation() {
         setLoadingInfo(false);
         return;
       }
+        const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
       try {
         const res = await axios.get<ConversationInfo[]>(
-          "http://localhost:3000/chat/conversations",
+          `${baseUrl}/chat/conversations`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -151,11 +152,10 @@ export default function Conversation() {
         console.warn("No token available for AI call");
         return;
       }
+      const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
       axios
         .post(
-          `${
-            import.meta.env.VITE_API_BASE || "http://localhost:3000"
-          }/ai/message`,
+          `${baseUrl}/ai/message`,
           { conversationId, content },
           { headers: { Authorization: `Bearer ${token}` } }
         )
@@ -185,10 +185,9 @@ export default function Conversation() {
         formData.append("image", selectedImage);
         formData.append("conversationId", conversationId);
         setImageUploading(true);
+         const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
         await axios.post(
-          `${
-            import.meta.env.VITE_API_BASE || "http://localhost:3000"
-          }/chat/upload-image`,
+          `${baseUrl}/chat/upload-image`,
           formData,
           {
             headers: {
@@ -237,10 +236,9 @@ export default function Conversation() {
         console.warn("No token from Clerk");
         return;
       }
+       const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000"; 
       const res = await axios.delete(
-        `${
-          import.meta.env.VITE_API_BASE || "http://localhost:3000"
-        }/ai/delete-chat-history`,
+        `${baseUrl}/ai/delete-chat-history`,
         {
           headers: { Authorization: `Bearer ${token}` },
           data: { conversationId },

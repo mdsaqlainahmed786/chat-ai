@@ -65,8 +65,9 @@ export default function ChatsPage() {
     try {
       setInviteLoading(true);
       const token = await getToken({ template: "default" });
+       const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
       const res = await axios.post(
-        "http://localhost:3000/chat/invite",
+        `${baseUrl}/chat/invite`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -127,7 +128,8 @@ export default function ChatsPage() {
     const fetchUser = async () => {
       try {
         const token = await getToken({ template: "default" });
-        const res = await fetch("http://localhost:3000/auth/authorize", {
+        const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+        const res = await fetch(`${baseUrl}/auth/authorize`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("auth/authorize failed");
@@ -149,7 +151,8 @@ export default function ChatsPage() {
       setLoading(true);
       try {
         const token = await getToken({ template: "default" });
-        const res = await fetch("http://localhost:3000/chat/conversations", {
+         const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+        const res = await fetch(`${baseUrl}/chat/conversations`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("fetch conversations failed");
@@ -185,9 +188,10 @@ export default function ChatsPage() {
   const handleInviteLink = async () => {
     setInviteLoading(true);
     try {
+      const baseUrl = import.meta.env.VITE_API_BASE || "http://localhost:3000";
       const token = await getToken({ template: "default" });
       const res = await axios.post(
-        "http://localhost:3000/chat/invite",
+        `${baseUrl}/chat/invite`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },

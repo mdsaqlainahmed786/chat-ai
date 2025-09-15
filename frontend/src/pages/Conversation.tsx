@@ -48,6 +48,7 @@ export default function Conversation() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    console.log("MESSAGES", messages);
   }, [messages]);
 
   useEffect(() => {
@@ -132,39 +133,47 @@ export default function Conversation() {
     );
   }
 
+  const responseFromAI = async (content: string) => {
+    try {
+      const token = await getToken({ template: "default" });
+      if (!token) {
+        console.warn("No token available for AI call");
+        return;
+      }
+      axios
+        .post(
+          `${
+            import.meta.env.VITE_API_BASE || "http://localhost:3000"
+          }/ai/message`,
+          { conversationId, content },
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        .then((res) => {
+          if (!res.data?.ok) {
+            console.warn("AI endpoint responded with error:", res.data);
+          }
+        })
+        .catch((err) => {
+          console.error("AI call failed:", err);
+        });
+    } catch (err) {
+      console.error("sendMessage failed:", err);
+    }
+  };
+
   const handleSend = async () => {
     if (!text.trim() || !conversationId) return;
     const content = text.trim();
+
     if (
       conversationInfo?.title === "AI-Assistant" &&
       !conversationInfo?.isGroup
     ) {
-
-      try {
-        const token = await getToken({ template: "default" });
-        if (!token) {
-          console.warn("No token available for AI call");
-          return;
-        }
-        axios
-          .post(
-            `${
-              import.meta.env.VITE_API_BASE || "http://localhost:3000"
-            }/ai/message`,
-            { conversationId, content },
-            { headers: { Authorization: `Bearer ${token}` } }
-          )
-          .then((res) => {
-            if (!res.data?.ok) {
-              console.warn("AI endpoint responded with error:", res.data);
-            }
-          })
-          .catch((err) => {
-            console.error("AI call failed:", err);
-          });
-      } catch (err) {
-        console.error("sendMessage failed:", err);
-      }
+      responseFromAI(content);
+      setText("");
+      return;
+    } else if (content.includes("@AI")) {
+      responseFromAI(content);
       setText("");
       return;
     }
@@ -363,7 +372,7 @@ export default function Conversation() {
                       )}
                       <div className="bg-purple-400 rounded-2xl px-4 py-3 shadow-sm border border-purple-100 group-hover:shadow-md transition-shadow max-w-fit ml-auto">
                         <div className="text-white flex flex-row justify-end text-end gap-2 prose prose-sm max-w-none leading-relaxed">
-                          <p className="leading-relaxed"> {message.content}</p>
+                          <p className={`leading-relaxed`}> {message.content}</p>
                           <div className="flex items-end gap-2 -mb-1 -mr-2">
                             <span className="text-xs text-slate-300">
                               {new Date(message.createdAt).toLocaleTimeString(
@@ -392,7 +401,7 @@ export default function Conversation() {
               } else {
                 return (
                   <div
-                    className={`bg-white rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow`}
+                    className={`bg-white ${message.isAi ? "flex justify-center items-center mx-auto":""} rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow`}
                   >
                     <div className="flex items-end gap-2">
                       <div className="prose prose-sm text-gray-800 leading-relaxed max-w-none">

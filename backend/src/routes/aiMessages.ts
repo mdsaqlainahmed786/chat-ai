@@ -58,16 +58,19 @@ aiMessagesRouter.post("/message", async (req, res) => {
       take: 50,
     });
     const conversationText = history
-      .map((m) => `${m.isAi ? "AI-Assistant" : m.sender.firstName ?? "User"}: ${m.content ?? ""}`)
+      .map((m) => m.content ?? "")
       .join("\n");
-    const prompt = conversationText + `\nAssistant:`;
 
-    const stream = await model.generateContentStream({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-    });
-
+    let prompt = conversationText; // no extra Assistant: prefix
+    const lastMsg = history[history.length - 1];
+    if (lastMsg && !lastMsg.isAi) {
+      prompt += `\nAssistant:`;
+    }
     const aiUser = await ensureAiUser();
     let finalText = "";
+
+    // Call the generative model to get a streaming response
+    const stream = await model.generateContentStream(prompt);
 
     for await (const chunk of stream.stream) {
       const chunkText = chunk.text();

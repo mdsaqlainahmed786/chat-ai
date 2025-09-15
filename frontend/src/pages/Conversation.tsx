@@ -42,10 +42,10 @@ export default function Conversation() {
   const { getToken, userId } = useAuth();
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
-  const { connected, messages } = useConversationSocket(conversationId);
+  const { connected, messages, sendMessage, aiStreaming } =
+    useConversationSocket(conversationId);
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -95,7 +95,6 @@ export default function Conversation() {
   let headerAvatar: string | null = null;
 
   if (conversationInfo) {
-    // console.log("Conversation Info:", conversationInfo);
     if (conversationInfo.isGroup) {
       headerName = conversationInfo.title ?? "Unnamed Group";
     } else {
@@ -135,36 +134,42 @@ export default function Conversation() {
 
   const handleSend = async () => {
     if (!text.trim() || !conversationId) return;
-
     const content = text.trim();
-    setText("");
+    if (
+      conversationInfo?.title === "AI-Assistant" &&
+      !conversationInfo?.isGroup
+    ) {
 
-    try {
-      const token = await getToken({ template: "default" });
-      if (!token) {
-        console.warn("No token available for AI call");
-        return;
+      try {
+        const token = await getToken({ template: "default" });
+        if (!token) {
+          console.warn("No token available for AI call");
+          return;
+        }
+        axios
+          .post(
+            `${
+              import.meta.env.VITE_API_BASE || "http://localhost:3000"
+            }/ai/message`,
+            { conversationId, content },
+            { headers: { Authorization: `Bearer ${token}` } }
+          )
+          .then((res) => {
+            if (!res.data?.ok) {
+              console.warn("AI endpoint responded with error:", res.data);
+            }
+          })
+          .catch((err) => {
+            console.error("AI call failed:", err);
+          });
+      } catch (err) {
+        console.error("sendMessage failed:", err);
       }
-
-      axios
-        .post(
-          `${
-            import.meta.env.VITE_API_BASE || "http://localhost:3000"
-          }/ai/message`,
-          { conversationId, content },
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-        .then((res) => {
-          if (!res.data?.ok) {
-            console.warn("AI endpoint responded with error:", res.data);
-          }
-        })
-        .catch((err) => {
-          console.error("AI call failed:", err);
-        });
-    } catch (err) {
-      console.error("sendMessage failed:", err);
+      setText("");
+      return;
     }
+    await sendMessage({ content });
+    setText("");
   };
   const handleDeleteChat = async () => {
     if (!conversationId) return;
@@ -198,6 +203,7 @@ export default function Conversation() {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
+      if (aiStreaming) return;
       handleSend();
     }
   };
@@ -442,14 +448,20 @@ export default function Conversation() {
                 disabled={!connected}
               />
             </div>
-            <Button
-              onClick={handleSend}
-              disabled={!text.trim() || !connected}
-              size="icon"
-              className="h-12 w-12 rounded-2xl bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <Send className="h-5 w-5" />
-            </Button>
+            {aiStreaming ? (
+              <div className="h-12 w-12 rounded-2xl flex justify-center items-center bg-gradient-to-r from-purple-300 to-purple-500 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : (
+              <Button
+                onClick={handleSend}
+                disabled={!text.trim() || !connected}
+                size="icon"
+                className="h-12 w-12 rounded-2xl bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <Send className="h-5 w-5" />
+              </Button>
+            )}
           </div>
         </div>
       </div>

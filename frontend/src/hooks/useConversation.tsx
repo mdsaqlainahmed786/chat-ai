@@ -112,8 +112,10 @@ export function useConversationSocket(conversationId?: string) {
           if (!mounted) return;
 
           setMessages((prev) => {
+            // Remove temp AI message
             const filtered = prev.filter((pm) => !(pm.isAi && pm.temp));
             if (filtered.some((pm) => pm.id === m.id)) return filtered;
+
             const next = [...filtered, m];
             next.sort(
               (a, b) =>
@@ -122,6 +124,11 @@ export function useConversationSocket(conversationId?: string) {
             );
             return next;
           });
+
+          // ✅ AI finished streaming
+          if (m.isAi) {
+            setAiStreaming(false);
+          }
         });
       } catch (err) {
         console.error("socket start error:", err);
@@ -175,5 +182,5 @@ export function useConversationSocket(conversationId?: string) {
     );
   };
 
- return { connected, messages, sendMessage, aiStreaming };
+  return { connected, messages, sendMessage, aiStreaming };
 }

@@ -14,31 +14,18 @@ datasource db {
 }
 
 model User {
-  id             String                    @id @default(cuid())
-  clerkId        String                    @unique // Clerk userId
-  email          String?                   @unique
-  firstName      String?
-  lastName       String?
-  imageUrl       String?
-  provider       String? // "google" | "email"
-  inviteLink     String?                   @unique
-  membership     Membership?
-  membershipId   String?
-  membershipPlan MembershipPlan?           @default(BASIC)
-  chats          ConversationParticipant[]
-  createdAt      DateTime                  @default(now())
-  updatedAt      DateTime                  @updatedAt
-  Message        Message[]
-}
-
-model Membership {
-  id             String         @id @default(uuid())
-  user           User           @relation(fields: [userId], references: [id])
-  userId         String         @unique
-  plan           MembershipPlan
-  aiMessagesLeft Int            @default(0)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id         String                    @id @default(cuid())
+  clerkId    String                    @unique // Clerk userId
+  email      String?                   @unique
+  firstName  String?
+  lastName   String?
+  imageUrl   String?
+  provider   String? // "google" | "email"
+  inviteLink String?                   @unique
+  chats      ConversationParticipant[]
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
+  Message    Message[]
 }
 
 model Conversation {
@@ -63,20 +50,13 @@ model ConversationParticipant {
 }
 
 model Message {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
   senderId       String
   content        String? // text content
   imageUrl       String? // optional image URL (Cloudinary)
-  isAi           Boolean  @default(false)
-  createdAt      DateTime @default(now())
-
-  conversation Conversation @relation(fields: [conversationId], references: [id])
-  sender       User         @relation(fields: [senderId], references: [id])
-}
-
-enum MembershipPlan {
-  BASIC
-  STANDARD
-  PREMIUM
+  isAi           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  sender         User         @relation(fields: [senderId], references: [id])
 }

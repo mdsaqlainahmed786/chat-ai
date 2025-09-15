@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useConversationSocket } from "../hooks/useConversation";
+import { Image as ImageIcon, X, Send } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Send, Users, Circle, Trash2 } from "lucide-react";
+import { ArrowLeft, Users, Circle, Trash2 } from "lucide-react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -21,7 +22,6 @@ import AiConversationAvatar from "@/components/AiConversationAvatar";
 
 export default function Conversation() {
   type ConversationInfo = {
-    
     pairKey?: string | null;
     id: string;
     title?: string | null;
@@ -42,6 +42,10 @@ export default function Conversation() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [loadingInfo, setLoadingInfo] = useState(true);
   const { getToken, userId } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
   const [aiConversationPairKey, setAiConversationPairKey] = useState<
     string | null
   >(null);
@@ -170,9 +174,46 @@ export default function Conversation() {
   };
 
   const handleSend = async () => {
-    if (!text.trim() || !conversationId) return;
-    const content = text.trim();
+    if ((!text.trim() && !selectedImage) || !conversationId) return;
 
+    // if image is selected → upload it
+    if (selectedImage) {
+      try {
+        const token = await getToken({ template: "default" });
+        if (!token) return;
+
+        const formData = new FormData();
+        formData.append("image", selectedImage);
+        formData.append("conversationId", conversationId);
+        setImageUploading(true);
+        await axios.post(
+          `${
+            import.meta.env.VITE_API_BASE || "http://localhost:3000"
+          }/chat/upload-image`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        setSelectedImage(null);
+        setPreviewUrl(null);
+        setImageUploading(false);
+        setText("");
+        return;
+      } catch (err) {
+        console.error("Image upload failed:", err);
+        return;
+      } finally {
+        setImageUploading(false);
+      }
+    }
+
+    // otherwise → normal text message
+    const content = text.trim();
     if (
       conversationInfo?.title === "AI-Assistant" &&
       !conversationInfo?.isGroup
@@ -188,6 +229,7 @@ export default function Conversation() {
     await sendMessage({ content });
     setText("");
   };
+
   const handleDeleteChat = async () => {
     if (!conversationId) return;
     try {
@@ -222,6 +264,14 @@ export default function Conversation() {
       e.preventDefault();
       if (aiStreaming) return;
       handleSend();
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+      setPreviewUrl(URL.createObjectURL(file));
     }
   };
 
@@ -370,32 +420,7 @@ export default function Conversation() {
                     key={message.id}
                     className="flex flex-row-reverse gap-3 group"
                   >
-                    {/* <div className="flex-shrink-0">
-                      {conversationInfo?.isGroup && (
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage
-                            src={message.sender.imageUrl || undefined}
-                          />
-                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white text-sm">
-                            {(
-                              message.sender.firstName?.[0] ||
-                              message.sender.clerkId?.[0] ||
-                              "U"
-                            ).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      )}
-                    </div> */}
                     <div className="flex-1 min-w-0">
-                      {/* {conversationInfo?.isGroup && (
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-gray-800">
-                            {message.sender.firstName
-                              ? message.sender.firstName.trim()
-                              : message.sender.clerkId}
-                          </span>
-                        </div>
-                      )} */}
                       {conversationInfo?.isGroup && (
                         <div className="flex justify-end items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-gray-800">
@@ -426,7 +451,7 @@ export default function Conversation() {
                             <img
                               src={message.imageUrl}
                               alt="Shared image"
-                              className="max-w-sm rounded-xl border border-purple-100 shadow-sm"
+                              className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-xl border border-purple-100 shadow-sm object-cover"
                             />
                           </div>
                         )}
@@ -499,7 +524,7 @@ export default function Conversation() {
                             <img
                               src={message.imageUrl}
                               alt="Shared image"
-                              className="max-w-sm rounded-xl border border-purple-100 shadow-sm"
+                              className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-xl border border-purple-100 shadow-sm object-cover"
                             />
                           </div>
                         )}
@@ -523,33 +548,80 @@ export default function Conversation() {
 
       {/* Message Input - Fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-purple-100">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex gap-3 items-end">
-            <div className="flex-1">
-              <Input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type a message..."
-                className="bg-white border-purple-200 focus:border-purple-400 focus:ring-purple-400 rounded-2xl px-6 py-3 text-base resize-none"
-                disabled={!connected}
-              />
-            </div>
-            {aiStreaming ? (
-              <div className="h-12 w-12 rounded-2xl flex justify-center items-center bg-gradient-to-r from-purple-300 to-purple-500 shadow-lg hover:shadow-xl transition-all duration-300">
-                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+        <div className="max-w-4xl mx-auto px-4 py-4 flex items-end gap-3">
+          {/* Hidden file input */}
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleImageSelect}
+          />
+
+          {selectedImage && previewUrl ? (
+            // 🔹 Preview Mode (hide text input)
+            <div className="flex items-center gap-3 flex-1">
+              <div className="relative">
+                <img
+                  src={previewUrl}
+                  alt="Shared image"
+                  className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-xl border border-purple-100 shadow-sm object-cover"
+                />
+
+                <button
+                  onClick={() => {
+                    setSelectedImage(null);
+                    setPreviewUrl(null);
+                  }}
+                  className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-            ) : (
+            </div>
+          ) : (
+            // 🔹 Normal Input Mode
+            <>
+              {/* Image upload button */}
               <Button
-                onClick={handleSend}
-                disabled={!text.trim() || !connected}
+                type="button"
                 size="icon"
-                className="h-12 w-12 rounded-2xl bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300"
+                variant="ghost"
+                className="h-12 w-12 rounded-2xl"
+                onClick={() => fileInputRef.current?.click()}
               >
-                <Send className="h-5 w-5" />
+                <ImageIcon className="h-5 w-5 text-purple-600" />
               </Button>
-            )}
-          </div>
+
+              {/* Text input */}
+              <div className="flex-1">
+                <Input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type a message..."
+                  className="bg-white border-purple-200 focus:border-purple-400 focus:ring-purple-400 rounded-2xl px-6 py-3 text-base resize-none"
+                  disabled={!connected}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Send button (always visible) */}
+          {aiStreaming || imageUploading ? (
+            <div className="h-12 w-12 rounded-2xl flex justify-center items-center bg-gradient-to-r from-purple-300 to-purple-500 shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <Button
+              onClick={handleSend}
+              disabled={(!text.trim() && !selectedImage) || !connected}
+              size="icon"
+              className="h-12 w-12 rounded-2xl bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
+          )}
         </div>
       </div>
     </div>

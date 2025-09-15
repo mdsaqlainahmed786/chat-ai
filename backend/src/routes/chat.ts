@@ -1,6 +1,7 @@
-// src/routes/chat.ts
 import { Router, Request, Response } from "express";
 import express from "express";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
 import { getAuth } from "@clerk/express";
 import { createClerkClient } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
@@ -14,6 +15,12 @@ export const chatRouter = Router();
 function makePairKey(a: string, b: string) {
   return a < b ? `${a}_${b}` : `${b}_${a}`;
 }
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
 
 
 /**
@@ -148,7 +155,7 @@ chatRouter.get("/conversations", async (req: Request, res: Response) => {
       },
       include: {
         participants: {
-          include: { 
+          include: {
             user: true
           },
         },
@@ -293,3 +300,85 @@ chatRouter.delete("/delete-group", async (req, res) => {
     return res.status(500).json({ error: "Server error" });
   }
 })
+
+
+
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  api_key: process.env.CLOUDINARY_API_KEY!,
+  api_secret: process.env.CLOUDINARY_API_SECRET!,
+});
+
+const storage = multer.memoryStorage(); // keeps file in memory, no "uploads/" folder
+const upload = multer({ storage });
+
+
+chatRouter.post(
+  "/upload-image",
+  upload.single("image"),
+  async (req: Request, res: Response) => {
+    try {
+      let { userId } = getAuth(req as any);
+      if (!userId) userId = await getUserIdFromRequest(req);
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+      const { conversationId } = req.body;
+      if (!conversationId) {
+        return res.status(400).json({ error: "conversationId is required" });
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      // upload buffer directly to Cloudinary
+      const uploadResult = await new Promise<any>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "chat_images" },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+        stream.end(req?.file?.buffer);
+      });
+
+      // save message in DB
+      const sender = await prisma.user.findUnique({ where: { clerkId: userId } });
+      if (!sender) return res.status(400).json({ error: "User not found" });
+      const message = await prisma.message.create({
+        data: {
+          conversationId,
+          senderId: sender.id,
+          imageUrl: uploadResult.secure_url,
+        },
+        include: { sender: true },
+      });
+
+      // emit to the conversation room so all clients get it instantly
+      const io = req.app.get("io");
+      if (io) {
+        io.to(conversationId).emit("newMessage", {
+          id: message.id,
+          conversationId: message.conversationId,
+          content: message.content,
+          imageUrl: message.imageUrl,
+          isAi: message.isAi,
+          createdAt: message.createdAt,
+          sender: {
+            id: message.sender.id,
+            clerkId: message.sender.clerkId,
+            firstName: message.sender.firstName,
+            imageUrl: message.sender.imageUrl,
+          },
+        });
+      }
+
+      return res.json({ ok: true, message });
+
+    } catch (err) {
+      console.error("Upload image error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  }
+);

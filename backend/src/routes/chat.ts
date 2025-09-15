@@ -148,12 +148,20 @@ chatRouter.get("/conversations", async (req: Request, res: Response) => {
       },
       include: {
         participants: {
-          include: { user: true },
+          include: { 
+            user: true
+          },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
-    return res.json(conversations);
+    const conversationPairKeys = await prisma.conversation.findMany({
+      where: {
+        participants: { some: { userId: dbUser.id } },
+      },
+      select: { pairKey: true, id: true },
+    });
+    return res.json({ conversations, conversationPairKeys });
   } catch (err: any) {
     console.error("ERROR /chat/conversations:", err);
     return res.status(500).json({ error: "Server error" });

@@ -153,8 +153,11 @@ export default function ChatsPage() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("fetch conversations failed");
-        const data: Conversation[] = await res.json();
-        if (mounted) setConversations(data);
+        const data: { conversations: Conversation[]; conversationPairKeys: { pairKey: string; id: string }[] } = await res.json();
+        if (mounted) {
+          setConversations(data?.conversations);
+          // setConversationPairKeys(data.conversationPairKeys);
+        }
         console.log("Fetched conversations:", data);
       } catch (err) {
         console.error("fetchConversations error:", err);

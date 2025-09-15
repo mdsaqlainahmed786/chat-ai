@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useConversationSocket } from "../hooks/useConversation";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,8 @@ import AiConversationAvatar from "@/components/AiConversationAvatar";
 
 export default function Conversation() {
   type ConversationInfo = {
+    
+    pairKey?: string | null;
     id: string;
     title?: string | null;
     isGroup: boolean;
@@ -40,6 +42,9 @@ export default function Conversation() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [loadingInfo, setLoadingInfo] = useState(true);
   const { getToken, userId } = useAuth();
+  const [aiConversationPairKey, setAiConversationPairKey] = useState<
+    string | null
+  >(null);
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
   const { connected, messages, sendMessage, aiStreaming } =
@@ -48,7 +53,7 @@ export default function Conversation() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log("MESSAGES", messages);
+    // console.log("MESSAGES", messages);
   }, [messages]);
 
   useEffect(() => {
@@ -74,9 +79,12 @@ export default function Conversation() {
             headers: { Authorization: `Bearer ${token}` },
           }
         );
-        const found = res.data.find((c) => c.id === conversationId) ?? null;
+        //@ts-expect-error ignore
+        const found = res.data.conversations?.find((c) => c.id === conversationId) ?? null;
         if (!cancelled) {
           setConversationInfo(found);
+          setAiConversationPairKey(found?.pairKey ?? null);
+          // console.log("Fetched conversation info:", found);
         }
       } catch (err) {
         console.error("fetchConversation error:", err);
@@ -321,7 +329,7 @@ export default function Conversation() {
       <div className="max-w-4xl mx-auto px-4 pb-32">
         <div className="py-6 space-y-4">
           {loadingInfo ? (
-            <>
+            <React.Fragment key={loadingInfo.toString()}>
               {[1, 2, 3, 4, 5, 6, 7].map((i) => (
                 <div
                   key={i}
@@ -338,7 +346,7 @@ export default function Conversation() {
                   />
                 </div>
               ))}
-            </>
+            </React.Fragment>
           ) : messages.length === 0 ? (
             <div className="flex items-center justify-center h-96">
               <div className="text-center">
@@ -428,7 +436,7 @@ export default function Conversation() {
                 );
               } else {
                 return (
-                  <>
+                  <React.Fragment key={message.id}>
                     <div className="flex gap-1 group" key={message.id}>
                       {userId !== message?.sender?.clerkId && (
                         <div className="flex">
@@ -449,14 +457,16 @@ export default function Conversation() {
                         </div>
                       )}
                       <div
-                        className={`bg-white ${
+                        className={`bg-white rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose border-purple-100 group-hover:shadow-md transition-shadow ${
                           message.isAi
-                            ? "flex justify-center items-center mx-auto"
-                            : ""
-                        } rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow`}
+                            ? aiConversationPairKey?.startsWith("ai")
+                              ? "ml-0 mr-auto"
+                              : "mx-auto"
+                            : "mr-auto"
+                        }`}
                       >
                         <div className="flex-1 min-w-0">
-                          {conversationInfo?.isGroup && !message.isAi &&(
+                          {conversationInfo?.isGroup && !message.isAi && (
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-sm font-medium text-gray-800">
                                 {message.sender.firstName
@@ -502,7 +512,7 @@ export default function Conversation() {
                         )}
                       </div>
                     </div>
-                  </>
+                  </React.Fragment>
                 );
               }
             })

@@ -188,7 +188,7 @@ export default function ChatsPage() {
   const handleInviteLink = async () => {
     setInviteLoading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_BASE || "http://localhost:3000";
+       const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
       const token = await getToken({ template: "default" });
       const res = await axios.post(
         `${baseUrl}/chat/invite`,

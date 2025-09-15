@@ -312,6 +312,9 @@ export default function Conversation() {
                         </AvatarFallback>
                       )}
                     </Avatar>
+                    <h2 className="font-semibold text-gray-800">
+                        {headerName}
+                      </h2>
                   </>
                 )}
               </div>

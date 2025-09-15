@@ -3,6 +3,7 @@ import { useConversationSocket } from "../hooks/useConversation";
 import { Image as ImageIcon, X, Send, Sparkles } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import TextareaAutosize from "react-textarea-autosize";
 import { useAuth } from "@clerk/clerk-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -75,7 +76,8 @@ export default function Conversation() {
         setLoadingInfo(false);
         return;
       }
-        const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+      const baseUrl =
+        import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
       try {
         const res = await axios.get<ConversationInfo[]>(
           `${baseUrl}/chat/conversations`,
@@ -84,7 +86,7 @@ export default function Conversation() {
           }
         );
         //@ts-expect-error ignore
-        const found =  res.data.conversations?.find((c) => c.id === conversationId) ?? null;
+        const found = res.data.conversations?.find((c) => c.id === conversationId) ?? null;
         if (!cancelled) {
           setConversationInfo(found);
           setAiConversationPairKey(found?.pairKey ?? null);
@@ -152,7 +154,8 @@ export default function Conversation() {
         console.warn("No token available for AI call");
         return;
       }
-      const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+      const baseUrl =
+        import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
       axios
         .post(
           `${baseUrl}/ai/message`,
@@ -185,17 +188,14 @@ export default function Conversation() {
         formData.append("image", selectedImage);
         formData.append("conversationId", conversationId);
         setImageUploading(true);
-         const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
-        await axios.post(
-          `${baseUrl}/chat/upload-image`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
+        const baseUrl =
+          import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+        await axios.post(`${baseUrl}/chat/upload-image`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        });
 
         setSelectedImage(null);
         setPreviewUrl(null);
@@ -236,14 +236,12 @@ export default function Conversation() {
         console.warn("No token from Clerk");
         return;
       }
-       const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000"; 
-      const res = await axios.delete(
-        `${baseUrl}/ai/delete-chat-history`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          data: { conversationId },
-        }
-      );
+      const baseUrl =
+        import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+      const res = await axios.delete(`${baseUrl}/ai/delete-chat-history`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { conversationId },
+      });
       if (res.data?.ok) {
         console.log("Chat history deleted successfully");
         setIsDeleteOpen(false);
@@ -313,8 +311,8 @@ export default function Conversation() {
                       )}
                     </Avatar>
                     <h2 className="font-semibold text-gray-800">
-                        {headerName}
-                      </h2>
+                      {headerName}
+                    </h2>
                   </>
                 )}
               </div>
@@ -446,82 +444,48 @@ export default function Conversation() {
                 );
               } else {
                 return (
-                  <React.Fragment key={message.id}>
-                    <div className="flex gap-1 group" key={message.id}>
-                      {userId !== message?.sender?.clerkId && (
-                        <div className="flex">
-                          {conversationInfo?.isGroup && !message.isAi && (
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage
-                                src={message?.sender?.imageUrl || undefined}
-                              />
-                              <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white text-sm">
-                                {(
-                                  message.sender.firstName?.[0] ||
-                                  message.sender.clerkId?.[0] ||
-                                  "U"
-                                ).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                          )}
-                        </div>
-                      )}
-                      <div
-                        className={`rounded-2xl p-[3.5px] w-fit max-w-prose group-hover:shadow-md transition-shadow
+                  <div
+                    className={`rounded-2xl p-[3.5px] w-fit max-w-prose group-hover:shadow-md transition-shadow
     ${
       message.isAi
         ? aiConversationPairKey?.startsWith("ai")
-          ? // ✅ AI conversation -> plain left bubble
-            "bg-white shadow-sm border border-purple-100 ml-0 mr-auto"
-          : // ✅ Normal convo -> white inside + thicker gradient border
-            "bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 mx-auto bg-[length:200%_200%] animate-gradientMove"
-        : // ✅ Non-AI -> default
-          "bg-white shadow-sm border border-purple-100 mr-auto"
+          ? "bg-white shadow-sm border border-purple-100 ml-0 mr-auto"
+          : "bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 mx-auto bg-[length:200%_200%] animate-gradientMove"
+        : "bg-white shadow-sm border border-purple-100 mr-auto"
     }`}
-                      >
-                        {/* Inner box */}
-                        <div
-                          className={`rounded-2xl overflow-x-auto px-4 py-3 bg-white w-full ${
-                            message.isAi &&
-                            !aiConversationPairKey?.startsWith("ai")
-                              ? "text-gray-900"
-                              : "text-gray-800"
-                          }`}
-                        >
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                            {message.content || ""}
-                          </ReactMarkdown>
-                          {!isStreaming && (
-                            <span className="text-xs text-gray-500 whitespace-nowrap -mb-2 flex justify-end">
-                              {new Date(message.createdAt).toLocaleTimeString(
-                                [],
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                  >
+                    {/* Inner box */}
+                    <div
+                      className={`rounded-2xl px-4 py-3 bg-white w-full ${
+                        message.isAi && !aiConversationPairKey?.startsWith("ai")
+                          ? "text-gray-900"
+                          : "text-gray-800"
+                      }`}
+                    >
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.content || ""}
+                      </ReactMarkdown>
+
                       {message.imageUrl && (
                         <div className="mt-3">
                           <img
                             src={message.imageUrl}
                             alt="Shared image"
-                            className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-xl border border-purple-100 shadow-sm object-cover"
+                            className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-lg border border-purple-100 shadow-sm object-contain"
                           />
                         </div>
                       )}
-                      {isStreaming && (
-                        <div className="flex gap-1 mt-2 text-gray-400">
-                          <span className="animate-bounce">●</span>
-                          <span className="animate-bounce delay-150">●</span>
-                          <span className="animate-bounce delay-300">●</span>
-                        </div>
+
+                      {!isStreaming && (
+                        <span className="text-xs text-gray-500 whitespace-nowrap mt-2 flex justify-end">
+                          {new Date(message.createdAt).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
                       )}
                     </div>
-                  </React.Fragment>
+                  </div>
                 );
               }
             })
@@ -541,7 +505,7 @@ export default function Conversation() {
             className="hidden"
             onChange={handleImageSelect}
           />
-       
+
           {selectedImage && previewUrl ? (
             <div className="flex items-center gap-3 flex-1">
               <div className="relative">
@@ -592,13 +556,12 @@ export default function Conversation() {
                         <Sparkles className="relative z-20 h-5 w-5 text-white" />
                       </div>
                       <span className="text-purple-600 font-medium">
-                         <span className="font-semibold">AI</span>{" "}
-                        Ask any thing to AI assistant
+                        <span className="font-semibold">AI</span> Ask any thing
+                        to AI assistant
                       </span>
                     </div>
                   </div>
                 )}
-                
 
                 <div className="relative w-full">
                   <div
@@ -624,21 +587,34 @@ export default function Conversation() {
                       </span>
                     )}
                   </div>
-                  <input
-                    type="text"
+                  {/* <input
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                     onKeyDown={handleKeyPress}
+                    onKeyDown={handleKeyPress}
                     className="relative w-full px-6 py-3 text-base rounded-2xl border border-purple-200 
-      focus:border-purple-400 focus:ring-purple-400 bg-transparent text-transparent caret-black 
-      outline-none"
+    focus:border-purple-400 focus:ring-purple-400 bg-transparent caret-black outline-none 
+    resize-none overflow-auto max-h-40"
+                    placeholder="Type a message..."
                     autoComplete="off"
+                  /> */}
+                  <TextareaAutosize
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    minRows={1}
+                    maxRows={6}
+                    placeholder="Type a message..."
+                    className="w-full px-6 py-1 text-base rounded-2xl border border-purple-200 
+    focus:border-purple-400 focus:ring-purple-400 bg-white resize-none 
+    leading-relaxed overflow-y-auto outline-none caret-black text-gray-800 placeholder:text-gray-400"
                   />
+
+                  <div className="h-3" />
+                  {/* Spacer to avoid overlap with send button */}
                 </div>
-           </div>
+              </div>
             </>
           )}
-         
 
           {/* Send button (always visible) */}
           {aiStreaming || imageUploading ? (
@@ -650,7 +626,7 @@ export default function Conversation() {
               onClick={handleSend}
               disabled={(!text.trim() && !selectedImage) || !connected}
               size="icon"
-              className="h-12 w-12 rounded-2xl bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300"
+              className="h-12 w-16 rounded-2xl bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300"
             >
               <Send className="h-5 w-5" />
             </Button>

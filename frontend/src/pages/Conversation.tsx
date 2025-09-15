@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useConversationSocket } from "../hooks/useConversation";
-import { Image as ImageIcon, X, Send } from "lucide-react";
+import { Image as ImageIcon, X, Send, Sparkles } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@clerk/clerk-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -84,7 +83,7 @@ export default function Conversation() {
           }
         );
         //@ts-expect-error ignore
-        const found = res.data.conversations?.find((c) => c.id === conversationId) ?? null;
+        const found =  res.data.conversations?.find((c) => c.id === conversationId) ?? null;
         if (!cancelled) {
           setConversationInfo(found);
           setAiConversationPairKey(found?.pairKey ?? null);
@@ -482,34 +481,32 @@ export default function Conversation() {
                         </div>
                       )}
                       <div
-                        className={`bg-white rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose border-purple-100 group-hover:shadow-md transition-shadow ${
-                          message.isAi
-                            ? aiConversationPairKey?.startsWith("ai")
-                              ? "ml-0 mr-auto"
-                              : "mx-auto"
-                            : "mr-auto"
-                        }`}
+                        className={`rounded-2xl p-[3.5px] overflow-x-auto w-fit max-w-prose group-hover:shadow-md transition-shadow
+    ${
+      message.isAi
+        ? aiConversationPairKey?.startsWith("ai")
+          ? // ✅ AI conversation -> plain left bubble
+            "bg-white shadow-sm border border-purple-100 ml-0 mr-auto"
+          : // ✅ Normal convo -> white inside + thicker gradient border
+            "bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 mx-auto bg-[length:200%_200%] animate-gradientMove"
+        : // ✅ Non-AI -> default
+          "bg-white shadow-sm border border-purple-100 mr-auto"
+    }`}
                       >
-                        <div className="flex-1 min-w-0">
-                          {conversationInfo?.isGroup && !message.isAi && (
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-medium text-gray-800">
-                                {message.sender.firstName
-                                  ? message.sender.firstName.trim()
-                                  : message.sender.clerkId}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex items-end gap-2">
-                          <div className="prose prose-sm text-gray-800 leading-relaxed max-w-none overflow-x-auto">
-                            {" "}
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                              {message.content || ""}
-                            </ReactMarkdown>
-                          </div>
+                        {/* Inner box */}
+                        <div
+                          className={`rounded-2xl px-4 py-3 bg-white w-full ${
+                            message.isAi &&
+                            !aiConversationPairKey?.startsWith("ai")
+                              ? "text-gray-900"
+                              : "text-gray-800"
+                          }`}
+                        >
+                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            {message.content || ""}
+                          </ReactMarkdown>
                           {!isStreaming && (
-                            <span className="text-xs text-gray-500 whitespace-nowrap -mb-2">
+                            <span className="text-xs text-gray-500 whitespace-nowrap -mb-2 flex justify-end">
                               {new Date(message.createdAt).toLocaleTimeString(
                                 [],
                                 {
@@ -520,23 +517,23 @@ export default function Conversation() {
                             </span>
                           )}
                         </div>
-                        {message.imageUrl && (
-                          <div className="mt-3">
-                            <img
-                              src={message.imageUrl}
-                              alt="Shared image"
-                              className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-xl border border-purple-100 shadow-sm object-cover"
-                            />
-                          </div>
-                        )}
-                        {isStreaming && (
-                          <div className="flex gap-1 mt-2 text-gray-400">
-                            <span className="animate-bounce">●</span>
-                            <span className="animate-bounce delay-150">●</span>
-                            <span className="animate-bounce delay-300">●</span>
-                          </div>
-                        )}
                       </div>
+                      {message.imageUrl && (
+                        <div className="mt-3">
+                          <img
+                            src={message.imageUrl}
+                            alt="Shared image"
+                            className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-xl border border-purple-100 shadow-sm object-cover"
+                          />
+                        </div>
+                      )}
+                      {isStreaming && (
+                        <div className="flex gap-1 mt-2 text-gray-400">
+                          <span className="animate-bounce">●</span>
+                          <span className="animate-bounce delay-150">●</span>
+                          <span className="animate-bounce delay-300">●</span>
+                        </div>
+                      )}
                     </div>
                   </React.Fragment>
                 );
@@ -549,7 +546,7 @@ export default function Conversation() {
 
       {/* Message Input - Fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-purple-100">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-end gap-3">
+        <div className="max-w-4xl px-4 py-4 flex items-end gap-3 md:mx-auto">
           {/* Hidden file input */}
           <input
             type="file"
@@ -558,9 +555,8 @@ export default function Conversation() {
             className="hidden"
             onChange={handleImageSelect}
           />
-
+       
           {selectedImage && previewUrl ? (
-            // 🔹 Preview Mode (hide text input)
             <div className="flex items-center gap-3 flex-1">
               <div className="relative">
                 <img
@@ -582,31 +578,81 @@ export default function Conversation() {
             </div>
           ) : (
             <>
-              <Button
-                type="button"
-                size="icon"
-                variant="ghost"
-                className={`h-12 w-12 rounded-2xl ${
-                  aiConversationPairKey?.startsWith("ai") ? "hidden" : ""
-                }`}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <ImageIcon className="h-5 w-5 text-purple-600" />
-              </Button>
+              {conversationInfo && !aiConversationPairKey?.startsWith("ai") && (
+                <div
+                  role="button"
+                  className="rounded-2xl hover:bg-purple-100 p-2 transition-colors cursor-pointer"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImageIcon className="size-8 text-purple-600" />
+                </div>
+              )}
+              <div className="flex flex-col gap-3 w-full">
+                {text.includes("@AI") && (
+                  <div className="px-0.5 py-0.5 text-sm bg-purple-50 border border-purple-200 rounded-lg shadow-sm w-full bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 mx-auto bg-[length:200%_200%] animate-gradientMove">
+                    <div
+                      className={`px-2 py-3 flex items-center gap-3 md:px-4 rounded-lg bg-white w-full text-gray-900`}
+                    >
+                      <div
+                        className={`relative w-10 h-10 flex items-center justify-center rounded-full overflow-hidden`}
+                      >
+                        <div
+                          className="absolute inset-0 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 
+        bg-[length:200%_200%] animate-gradientMove z-10"
+                        />
+                        <div className="absolute inset-0 rounded-full z-0">
+                          <div className="w-full h-full rounded-full bg-purple-500 opacity-40 blur-2xl animate-pulse" />
+                        </div>
+                        <Sparkles className="relative z-20 h-5 w-5 text-white" />
+                      </div>
+                      <span className="text-purple-600 font-medium">
+                         <span className="font-semibold">AI</span>{" "}
+                        Ask any thing to AI assistant
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
 
-              {/* Text input */}
-              <div className="flex-1">
-                <Input
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Type a message..."
-                  className="bg-white border-purple-200 focus:border-purple-400 focus:ring-purple-400 rounded-2xl px-6 py-3 text-base resize-none"
-                  disabled={!connected}
-                />
-              </div>
+                <div className="relative w-full">
+                  <div
+                    className="absolute inset-0 px-6 py-3 text-base rounded-2xl border border-purple-200 
+      focus-within:border-purple-400 focus-within:ring-purple-400 bg-white 
+      whitespace-pre-wrap break-words pointer-events-none w-full overflow-hidden"
+                  >
+                    {text.split(" ").map((word, i) =>
+                      word === "@AI" ? (
+                        <span
+                          key={i}
+                          className="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
+                        >
+                          {word + " "}
+                        </span>
+                      ) : (
+                        word + " "
+                      )
+                    )}
+                    {!text && (
+                      <span className="text-gray-400 select-none">
+                        Type a message...
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                     onKeyDown={handleKeyPress}
+                    className="relative w-full px-6 py-3 text-base rounded-2xl border border-purple-200 
+      focus:border-purple-400 focus:ring-purple-400 bg-transparent text-transparent caret-black 
+      outline-none"
+                    autoComplete="off"
+                  />
+                </div>
+           </div>
             </>
           )}
+         
 
           {/* Send button (always visible) */}
           {aiStreaming || imageUploading ? (

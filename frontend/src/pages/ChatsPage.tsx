@@ -4,7 +4,7 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Plus, MessageCircle, Users, Copy } from "lucide-react";
+import { Plus, MessageCircle, Users, Link } from "lucide-react";
 import CreateGroupModal from "@/components/CreateGroupModal"; // new component we'll create
 import { useNavigate } from "react-router-dom";
 import InviteModal from "@/components/InviteModal";
@@ -258,9 +258,9 @@ export default function ChatsPage() {
                     {inviteLoading ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     ) : (
-                      <Copy className="h-4 w-4 mr-0 md:mr-2" />
+                      <Link className="h-4 w-4 mr-0 md:mr-2" />
                     )}
-                    Generate Invite Link
+                    Get Invite Link
                   </Button>
 
                   <Button

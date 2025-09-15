@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import {
   SignedIn,
   SignedOut,
-  SignInButton,
   UserButton,
 } from "@clerk/clerk-react";
 import { Menu, X } from "lucide-react";
@@ -18,7 +17,10 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center">
+          <div
+            onClick={() => navigate("/")}
+            className="flex items-center cursor-pointer"
+          >
             <div className="flex-shrink-0">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent">
                 ChatAI
@@ -63,15 +65,15 @@ const Navbar = () => {
             <div className="ml-4 flex items-center space-x-4">
               <SignedOut>
                 <div className="flex items-center gap-3">
-                  <SignInButton>
+                 
                     <Button
                       variant="ghost"
+                      onClick={() => navigate("/signin")}
                       className="text-gray-900 hover:text-purple-500"
                     >
                       Sign In
                     </Button>
-                  </SignInButton>
-
+                 
                   <button
                     onClick={() => navigate("/signup")}
                     className="px-4 text-sm py-2 rounded-xl font-semibold text-white 

@@ -432,10 +432,10 @@ export default function Conversation() {
                     <div className="flex gap-1 group" key={message.id}>
                       {userId !== message?.sender?.clerkId && (
                         <div className="flex">
-                          {conversationInfo?.isGroup && (
+                          {conversationInfo?.isGroup && !message.isAi && (
                             <Avatar className="h-8 w-8">
                               <AvatarImage
-                                src={message.sender.imageUrl || undefined}
+                                src={message?.sender?.imageUrl || undefined}
                               />
                               <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white text-sm">
                                 {(
@@ -456,7 +456,7 @@ export default function Conversation() {
                         } rounded-2xl px-4 py-3 shadow-sm border w-fit max-w-prose mr-auto border-purple-100 group-hover:shadow-md transition-shadow`}
                       >
                         <div className="flex-1 min-w-0">
-                          {conversationInfo?.isGroup && (
+                          {conversationInfo?.isGroup && !message.isAi &&(
                             <div className="flex items-center gap-2 mb-1">
                               <span className="text-sm font-medium text-gray-800">
                                 {message.sender.firstName

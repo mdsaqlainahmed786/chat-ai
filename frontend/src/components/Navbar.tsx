@@ -141,7 +141,10 @@ const Navbar = () => {
                 >
                   Sign In
                 </Button>
-                <button className="px-2 mx-3 mb-2 cursor-pointer text-xs py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700 shadow-md hover:shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center gap-2">
+                <button 
+                  onClick={() => navigate("/signup")}
+                  className="px-2 mx-3 mb-2 cursor-pointer text-xs py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700 shadow-md hover:shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center gap-2"
+                >
                   Get Started
                 </button>
                 <UserButton afterSignOutUrl="/signin" />

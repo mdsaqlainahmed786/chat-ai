@@ -13,7 +13,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Users, Circle, Trash2 } from "lucide-react";
+import { ArrowLeft, Users, Trash2 } from "lucide-react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -314,21 +314,6 @@ export default function Conversation() {
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    <div>
-                      <h2 className="font-semibold text-gray-800">
-                        {headerName}
-                      </h2>
-                      <div className="flex items-center gap-1 text-sm text-gray-500">
-                        <Circle
-                          className={`h-2 w-2 ${
-                            connected
-                              ? "fill-green-500 text-green-500"
-                              : "fill-gray-400 text-gray-400"
-                          }`}
-                        />
-                        {connected ? "Online" : "Connecting..."}
-                      </div>
-                    </div>
                   </>
                 )}
               </div>

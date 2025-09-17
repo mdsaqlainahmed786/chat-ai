@@ -6,6 +6,8 @@ import {
   Send,
   Sparkles,
   MoreVertical,
+  Square,
+  Mic,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,7 @@ import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import AiConversationAvatar from "@/components/AiConversationAvatar";
+import AudioMessage from "@/components/AudioMessage";
 
 export default function Conversation() {
   type ConversationInfo = {
@@ -60,6 +63,24 @@ export default function Conversation() {
   >(null);
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
+  // Define Msg type to include audioUrl
+  type Msg = {
+    id: string;
+    content?: string | null;
+    imageUrl?: string | null;
+    audioUrl?: string | null;
+    createdAt: string;
+    sender?: {
+      clerkId: string;
+      firstName?: string | null;
+      lastName?: string | null;
+      imageUrl?: string | null;
+    };
+    isAi?: boolean;
+    isGroup?: boolean;
+    temp?: boolean;
+  };
+
   const {
     connected,
     messages,
@@ -68,6 +89,13 @@ export default function Conversation() {
     onlineUsers,
     typingUser,
     emitTyping,
+    recording,
+    startRecording,
+    stopRecording,
+    previewAudio,
+    sendAudioMessage,
+    setPreviewAudio,
+    setAudioBlob,
   } = useConversationSocket(conversationId);
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -199,6 +227,12 @@ export default function Conversation() {
 
   const handleSend = async () => {
     if ((!text.trim() && !selectedImage) || !conversationId) return;
+    // if(previewAudio) {
+    //   console.log("SENDING THE AUDIOOOO......")
+    //   sendAudioMessage();
+    //   setPreviewAudio(null);
+    //   return;
+    // }
 
     // if image is selected → upload it
     if (selectedImage) {
@@ -499,7 +533,8 @@ export default function Conversation() {
               </div>
             </div>
           ) : (
-            messages.map((message) => {
+            //@ts-expect-error ignore
+            messages.map((message: Msg) => {
               const isStreaming = message.temp;
               if (userId === message?.sender?.clerkId) {
                 return (
@@ -566,6 +601,16 @@ export default function Conversation() {
                               <p className="leading-relaxed mr-3">
                                 {message.content}
                               </p>
+                              {/* Audio message */}
+                              {/* {message.audioUrl && (
+                                <div className="mt-2">
+                                  <audio
+                                    controls
+                                    src={message.audioUrl}
+                                    className="w-full max-w-[250px] rounded-lg"
+                                  />
+                                </div>
+                              )} */}
                               <div className="flex justify-end mt-1">
                                 <span className="text-xs text-slate-300">
                                   {new Date(
@@ -580,7 +625,6 @@ export default function Conversation() {
                           </>
                         )}
 
-                        {/* Image if present */}
                         {message.imageUrl && (
                           <div className="mt-3">
                             <img
@@ -588,6 +632,11 @@ export default function Conversation() {
                               alt="Shared image"
                               className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-xl border border-purple-100 shadow-sm object-cover"
                             />
+                          </div>
+                        )}
+                        {message.audioUrl && (
+                          <div className="mt-2">
+                            <AudioMessage src={message.audioUrl} />
                           </div>
                         )}
 
@@ -683,7 +732,11 @@ export default function Conversation() {
                             />
                           </div>
                         )}
-
+                        {message.audioUrl && (
+                          <div className="mt-2">
+                            <AudioMessage src={message.audioUrl} />
+                          </div>
+                        )}
                         {!isStreaming && (
                           <span className="text-xs text-gray-500 whitespace-nowrap mt-2 flex justify-end">
                             {new Date(message.createdAt).toLocaleTimeString(
@@ -705,136 +758,169 @@ export default function Conversation() {
           <div ref={messagesEndRef} />
         </div>
       </div>
-
-      {/* Message Input - Fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-purple-100">
         <div className="max-w-4xl px-4 py-4 flex items-end gap-3 md:mx-auto">
-          {/* Hidden file input */}
-          <input
-            type="file"
-            accept="image/*"
-            ref={fileInputRef}
-            className="hidden"
-            onChange={handleImageSelect}
-          />
+        {
+          conversationInfo && !aiConversationPairKey?.startsWith("ai") && 
+          (<> 
+          {!recording ? (
+            <button
+              onClick={startRecording}
+              className="p-2 bg-purple-500 rounded-full text-white"
+            >
+              <Mic className="h-5 w-5" />
+            </button>
+          ) : (
+            <button
+              onClick={stopRecording}
+              className="p-2 bg-red-500 rounded-full text-white"
+            >
+              <Square className="h-5 w-5" />
+            </button>
+          )}
+          </>)}
 
-          {selectedImage && previewUrl ? (
-            <div className="flex items-center gap-3 flex-1">
-              <div className="relative">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="h-20 w-20 object-cover rounded-lg border"
-                />
-
-                <button
-                  onClick={() => {
-                    setSelectedImage(null);
-                    setPreviewUrl(null);
-                  }}
-                  className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
+          {previewAudio ? (
+            <AudioMessage
+              src={previewAudio}
+              preview
+              onSend={sendAudioMessage}
+              onCancel={() => {
+                setPreviewAudio(null);
+                setAudioBlob(null);
+              }}
+            />
           ) : (
             <>
-              {conversationInfo && !aiConversationPairKey?.startsWith("ai") && (
-                <div
-                  role="button"
-                  className="rounded-2xl hover:bg-purple-100 p-2 transition-colors cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <ImageIcon className="size-8 text-purple-600" />
-                </div>
-              )}
-              <div className="flex flex-col gap-3 w-full">
-                {text.includes("@AI") && (
-                  <div className="px-0.5 py-0.5 text-sm bg-purple-50 border border-purple-200 rounded-lg shadow-sm w-full bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 mx-auto bg-[length:200%_200%] animate-gradientMove">
-                    <div
-                      className={`px-2 py-3 flex items-center gap-3 md:px-4 rounded-lg bg-white w-full text-gray-900`}
-                    >
-                      <div
-                        className={`relative w-10 h-10 flex items-center justify-center rounded-full overflow-hidden`}
-                      >
-                        <div
-                          className="absolute inset-0 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 
-        bg-[length:200%_200%] animate-gradientMove z-10"
-                        />
-                        <div className="absolute inset-0 rounded-full z-0">
-                          <div className="w-full h-full rounded-full bg-purple-500 opacity-40 blur-2xl animate-pulse" />
-                        </div>
-                        <Sparkles className="relative z-20 h-5 w-5 text-white" />
-                      </div>
-                      <span className="text-purple-600 font-medium">
-                        <span className="font-semibold">AI</span> Ask any thing
-                        to AI assistant
-                      </span>
-                    </div>
-                  </div>
-                )}
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={handleImageSelect}
+              />
 
-                <div className="relative w-full">
-                  <div
-                    className="absolute inset-0 px-6 py-3 text-base rounded-2xl border border-purple-200 
+              {selectedImage && previewUrl ? (
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="relative">
+                    <img
+                      src={previewUrl}
+                      alt="Preview"
+                      className="h-20 w-20 object-cover rounded-lg border"
+                    />
+
+                    <button
+                      onClick={() => {
+                        setSelectedImage(null);
+                        setPreviewUrl(null);
+                      }}
+                      className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {conversationInfo &&
+                    !aiConversationPairKey?.startsWith("ai") && (
+                      <div
+                        role="button"
+                        className="rounded-2xl hover:bg-purple-100 p-2 transition-colors cursor-pointer"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <ImageIcon className="size-8 text-purple-600" />
+                      </div>
+                    )}
+                  <div className="flex flex-col gap-3 w-full">
+                    {text.includes("@AI") && (
+                      <div className="px-0.5 py-0.5 text-sm bg-purple-50 border border-purple-200 rounded-lg shadow-sm w-full bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 mx-auto bg-[length:200%_200%] animate-gradientMove">
+                        <div
+                          className={`px-2 py-3 flex items-center gap-3 md:px-4 rounded-lg bg-white w-full text-gray-900`}
+                        >
+                          <div
+                            className={`relative w-10 h-10 flex items-center justify-center rounded-full overflow-hidden`}
+                          >
+                            <div
+                              className="absolute inset-0 rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 
+        bg-[length:200%_200%] animate-gradientMove z-10"
+                            />
+                            <div className="absolute inset-0 rounded-full z-0">
+                              <div className="w-full h-full rounded-full bg-purple-500 opacity-40 blur-2xl animate-pulse" />
+                            </div>
+                            <Sparkles className="relative z-20 h-5 w-5 text-white" />
+                          </div>
+                          <span className="text-purple-600 font-medium">
+                            <span className="font-semibold">AI</span> Ask any
+                            thing to AI assistant
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="relative w-full">
+                      <div
+                        className="absolute inset-0 px-6 py-3 text-base rounded-2xl border border-purple-200 
       focus-within:border-purple-400 focus-within:ring-purple-400 bg-white 
       whitespace-pre-wrap break-words pointer-events-none w-full overflow-hidden"
-                  >
-                    {text.split(" ").map((word, i) =>
-                      word === "@AI" ? (
-                        <span
-                          key={i}
-                          className="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
-                        >
-                          {word + " "}
-                        </span>
-                      ) : (
-                        word + " "
-                      )
-                    )}
-                    {!text && (
-                      <span className="text-gray-400 select-none">
-                        Type a message...
-                      </span>
-                    )}
-                  </div>
-                  <TextareaAutosize
-                    value={text}
-                    onChange={(e) => {
-                      setText(e.target.value);
-                      emitTyping(); // 👈 trigger typing event
-                    }}
-                    onKeyDown={handleKeyPress}
-                    minRows={1}
-                    maxRows={6}
-                    placeholder="Type a message..."
-                    className="w-full px-6 py-1 text-base rounded-2xl border border-purple-200 
+                      >
+                        {text.split(" ").map((word, i) =>
+                          word === "@AI" ? (
+                            <span
+                              key={i}
+                              className="bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-purple-600 font-semibold"
+                            >
+                              {word + " "}
+                            </span>
+                          ) : (
+                            word + " "
+                          )
+                        )}
+                        {!text && (
+                          <span className="text-gray-400 select-none">
+                            Type a message...
+                          </span>
+                        )}
+                      </div>
+                      <TextareaAutosize
+                        value={text}
+                        onChange={(e) => {
+                          setText(e.target.value);
+                          emitTyping();
+                        }}
+                        onKeyDown={handleKeyPress}
+                        minRows={1}
+                        maxRows={6}
+                        placeholder="Type a message..."
+                        className="w-full px-6 py-1 text-base rounded-2xl border border-purple-200 
     focus:border-purple-400 focus:ring-purple-400 bg-white resize-none 
     leading-relaxed overflow-y-auto outline-none caret-black text-gray-800 placeholder:text-gray-400"
-                  />
+                      />
 
-                  <div className="h-3" />
-                  {/* Spacer to avoid overlap with send button */}
+                      <div className="h-3" />
+                      {/* Spacer to avoid overlap with send button */}
+                    </div>
+                  </div>
+                </>
+              )}
+              {aiStreaming || imageUploading ? (
+                <div className="h-12 w-12 rounded-2xl flex justify-center items-center bg-gradient-to-r from-purple-300 to-purple-500 shadow-lg hover:shadow-xl transition-all duration-300">
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 </div>
-              </div>
+              ) : (
+                <Button
+                  onClick={handleSend}
+                  disabled={
+                    (!text.trim() && !selectedImage) ||
+                    !connected
+                  }
+                  size="icon"
+                  className="h-12 w-16 cursor-pointer rounded-2xl bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              )}
             </>
-          )}
-
-          {/* Send button (always visible) */}
-          {aiStreaming || imageUploading ? (
-            <div className="h-12 w-12 rounded-2xl flex justify-center items-center bg-gradient-to-r from-purple-300 to-purple-500 shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : (
-            <Button
-              onClick={handleSend}
-              disabled={(!text.trim() && !selectedImage) || !connected}
-              size="icon"
-              className="h-12 w-16 rounded-2xl bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300"
-            >
-              <Send className="h-5 w-5" />
-            </Button>
           )}
         </div>
       </div>

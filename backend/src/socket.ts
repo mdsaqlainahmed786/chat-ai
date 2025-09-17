@@ -60,9 +60,9 @@ export function initSocketServer(server: http.Server) {
   io.on("connection", (socket) => {
     const clerkId = socket.data.clerkId as string | undefined;
     console.log(`socket connected ${socket.id} clerkId=${clerkId}`);
-     onlineUsers.add(clerkId!);
-  socket.emit("onlineUsers", Array.from(onlineUsers));
-  socket.broadcast.emit("userOnline", { clerkId });
+    onlineUsers.add(clerkId!);
+    socket.emit("onlineUsers", Array.from(onlineUsers));
+    socket.broadcast.emit("userOnline", { clerkId });
     io.emit("userOnline", { clerkId });
 
     socket.on("joinRoom", async (payload: { conversationId: string }, ack) => {
@@ -101,6 +101,7 @@ export function initSocketServer(server: http.Server) {
           conversationId: m.conversationId,
           content: m.content,
           imageUrl: m.imageUrl,
+          audioUrl: m.audioUrl,
           isAi: m.isAi,
           createdAt: m.createdAt.toISOString(),
           sender: {
@@ -129,54 +130,49 @@ export function initSocketServer(server: http.Server) {
     // New message
     socket.on(
       "sendMessage",
-      async (payload: { conversationId: string; content?: string; imageUrl?: string; isAi?: boolean }, ack) => {
-        try {
-          const { conversationId, content, imageUrl, isAi } = payload;
-          if (!conversationId) return ack?.({ ok: false, error: "conversationId required" });
-          if (!clerkId) return ack?.({ ok: false, error: "not authenticated" });
+      async (
+        payload: { conversationId: string; content?: string; imageUrl?: string; audioUrl?: string; isAi?: boolean },
+        ack
+      ) => {
+        const { conversationId, content, imageUrl, audioUrl, isAi } = payload;
+        const clerkId = socket.data.clerkId;
 
-          const sender = await prisma.user.findUnique({ where: { clerkId } });
-          if (!sender) return ack?.({ ok: false, error: "user not found" });
+        if (!clerkId) return ack?.({ ok: false, error: "not authenticated" });
 
-          const participant = await prisma.conversationParticipant.findUnique({
-            where: {
-              userId_conversationId: { userId: sender.id, conversationId },
-            },
-          });
-          if (!participant) return ack?.({ ok: false, error: "not a participant" });
+        const sender = await prisma.user.findUnique({ where: { clerkId } });
+        if (!sender) return ack?.({ ok: false, error: "user not found" });
 
-          const message = await prisma.message.create({
-            data: {
-              conversationId,
-              senderId: sender.id,
-              content: content ?? null,
-              imageUrl: imageUrl ?? null,
-              isAi: !!isAi,
-            },
-            include: { sender: true },
-          });
+        const message = await prisma.message.create({
+          data: {
+            conversationId,
+            senderId: sender.id,
+            content: content ?? null,
+            imageUrl: imageUrl ?? null,
+            audioUrl: audioUrl ?? null, 
+            isAi: !!isAi,
+          },
+          include: { sender: true },
+        });
 
-          io.to(conversationId).emit("newMessage", {
-            id: message.id,
-            conversationId: message.conversationId,
-            content: message.content,
-            imageUrl: message.imageUrl,
-            isAi: message.isAi,
-            createdAt: message.createdAt,
-            sender: {
-              clerkId: message.sender.clerkId,
-              firstName: message.sender.firstName,
-              imageUrl: message.sender.imageUrl,
-            },
-          });
+        io.to(conversationId).emit("newMessage", {
+          id: message.id,
+          conversationId: message.conversationId,
+          content: message.content,
+          imageUrl: message.imageUrl,
+          audioUrl: message.audioUrl,
+          isAi: message.isAi,
+          createdAt: message.createdAt,
+          sender: {
+            clerkId: message.sender.clerkId,
+            firstName: message.sender.firstName,
+            imageUrl: message.sender.imageUrl,
+          },
+        });
 
-          return ack?.({ ok: true, messageId: message.id });
-        } catch (err: any) {
-          console.error("sendMessage error:", err);
-          return ack?.({ ok: false, error: "server error" });
-        }
+        return ack?.({ ok: true, messageId: message.id });
       }
     );
+
 
     socket.on("disconnect", (reason) => {
       console.log(`socket disconnected ${socket.id} reason=${reason}`);

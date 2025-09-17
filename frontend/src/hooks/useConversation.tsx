@@ -15,6 +15,7 @@ type Msg = {
     clerkId?: string | null;
     firstName?: string | null;
     imageUrl?: string | null;
+    audioUrl?: string | null;
   };
   temp?: boolean; // Add temp as optional property
 };
@@ -24,17 +25,13 @@ export function useConversationSocket(conversationId?: string) {
   const socketRef = useRef<Socket | null>(null);
   const [aiStreaming, setAiStreaming] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [previewAudio, setPreviewAudio] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUser, setTypingUser] = useState<string | null>(null);
-
-  //     const handleTyping = () => {
-  //   if (!socketRef.current) return;
-  //   socketRef.current.emit("typing", { conversationId });
-  //   const typingTimeout: NodeJS.Timeout = setTimeout(() => {
-  //     socketRef.current?.emit("stopTyping", { conversationId });
-  //   }, 2000);
-  // };
+  const [recording, setRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -72,8 +69,6 @@ export function useConversationSocket(conversationId?: string) {
             console.warn("joinRoom failed:", res.error ?? res);
             return;
           }
-          // initialize messages from server
-          // ensure they are sorted ascending by createdAt
           const serverMessages: Msg[] = Array.isArray(res.messages)
             ? res.messages
             : [];
@@ -204,6 +199,7 @@ export function useConversationSocket(conversationId?: string) {
     content?: string;
     imageUrl?: string;
     isAi?: boolean;
+    audioUrl?: string;
   }) => {
     const socket = socketRef.current;
     if (!socket || !socket.connected) {
@@ -233,8 +229,6 @@ export function useConversationSocket(conversationId?: string) {
   const emitTyping = () => {
     if (!socketRef.current) return;
     socketRef.current.emit("typing", { conversationId });
-
-    // stopTyping after 2s of inactivity
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
@@ -242,6 +236,78 @@ export function useConversationSocket(conversationId?: string) {
       socketRef.current?.emit("stopTyping", { conversationId });
     }, 2000);
   };
+
+const startRecording = async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const recorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = recorder;
+
+    const chunks: BlobPart[] = [];
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunks, { type: "audio/webm" });
+      setAudioBlob(blob); 
+      setPreviewAudio(URL.createObjectURL(blob));
+    };
+
+    recorder.start();
+    setRecording(true);
+  } catch (err) {
+    console.error("Error starting recording:", err);
+  }
+};
+
+const stopRecording = () => {
+  if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+    mediaRecorderRef.current.stop();
+  }
+  setRecording(false);
+};
+
+
+const sendAudioMessage = async () => {
+  if (!audioBlob || !conversationId) {
+    console.error("No audioBlob or conversationId");
+    return;
+  }
+
+  console.log("Uploading audio message...", audioBlob);
+
+  try {
+    const formData = new FormData();
+    formData.append("audio", audioBlob, "recording.webm");
+    formData.append("conversationId", conversationId);
+
+    const res = await fetch(
+      `${import.meta.env.VITE_SOCKET_URL}/chat/upload-audio`,
+      {
+        method: "POST",
+        body: formData,
+        headers: {
+          Authorization: `Bearer ${await getToken({ template: "default" })}`,
+        },
+      }
+    );
+
+    if (!res.ok) throw new Error("Upload failed");
+    const data = await res.json();
+    console.log("Audio uploaded:", data);
+    setPreviewAudio(null);
+    setAudioBlob(null);
+  } catch (err) {
+    console.error("Error uploading audio:", err);
+  } finally {
+    setRecording(false);
+  }
+};
+
+
 
   return {
     connected,
@@ -251,5 +317,13 @@ export function useConversationSocket(conversationId?: string) {
     typingUser,
     aiStreaming,
     emitTyping,
+    recording,
+    startRecording,
+    stopRecording,
+    previewAudio,
+    setPreviewAudio,
+    setAudioBlob,
+    audioBlob,
+    sendAudioMessage,
   };
 }

@@ -427,6 +427,78 @@ chatRouter.post(
   }
 );
 
+chatRouter.post(
+  "/upload-audio",
+  upload.single("audio"),
+  async (req: Request, res: Response) => {
+    try {
+      let { userId } = getAuth(req as any);
+      if (!userId) userId = await getUserIdFromRequest(req);
+      if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+      const { conversationId } = req.body;
+      if (!conversationId) {
+        return res.status(400).json({ error: "conversationId is required" });
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      // upload audio to Cloudinary
+      const uploadResult = await new Promise<any>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "chat_audios", resource_type: "video" }, // ✅ audio treated as video
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+        stream.end(req?.file?.buffer);
+      });
+
+      // save message in DB
+      const sender = await prisma.user.findUnique({ where: { clerkId: userId } });
+      if (!sender) return res.status(400).json({ error: "User not found" });
+
+      const message = await prisma.message.create({
+        data: {
+          conversationId,
+          senderId: sender.id,
+          audioUrl: uploadResult.secure_url, // ✅ save audioUrl
+        },
+        include: { sender: true },
+      });
+
+      // emit to room
+      const io = req.app.get("io");
+      if (io) {
+        io.to(conversationId).emit("newMessage", {
+          id: message.id,
+          conversationId: message.conversationId,
+          content: message.content,
+          imageUrl: message.imageUrl,
+          audioUrl: message.audioUrl, // ✅ include in payload
+          isAi: message.isAi,
+          createdAt: message.createdAt,
+          sender: {
+            id: message.sender.id,
+            clerkId: message.sender.clerkId,
+            firstName: message.sender.firstName,
+            imageUrl: message.sender.imageUrl,
+          },
+        });
+      }
+
+      return res.json({ ok: true, message });
+    } catch (err) {
+      console.error("Upload audio error:", err);
+      return res.status(500).json({ error: "Server error" });
+    }
+  }
+);
+
+
+
 
 
 chatRouter.delete("/delete-message", async (req: Request, res: Response) => {

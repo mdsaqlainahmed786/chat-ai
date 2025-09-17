@@ -55,6 +55,7 @@ model Message {
   senderId       String
   content        String? // text content
   imageUrl       String? // optional image URL (Cloudinary)
+  audioUrl       String?
   isAi           Boolean      @default(false)
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id])

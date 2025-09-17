@@ -18,6 +18,7 @@ type DBUser = {
   firstName?: string | null;
   lastName?: string | null;
   imageUrl?: string | null;
+  audioUrl?: string | null;
 };
 
 type ParticipantWithUser = {

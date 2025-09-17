@@ -127,7 +127,7 @@ export function useConversationSocket(conversationId?: string) {
         });
 
         socket.on("userStopTyping", ({ clerkId }) => {
-          if (typingUser === clerkId) setTypingUser(null);
+          setTypingUser((prev) => (prev === clerkId ? null : prev));
         });
 
         socket.on("disconnect", (reason) => {
@@ -228,6 +228,21 @@ export function useConversationSocket(conversationId?: string) {
     );
   };
 
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const emitTyping = () => {
+    if (!socketRef.current) return;
+    socketRef.current.emit("typing", { conversationId });
+
+    // stopTyping after 2s of inactivity
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    typingTimeoutRef.current = setTimeout(() => {
+      socketRef.current?.emit("stopTyping", { conversationId });
+    }, 2000);
+  };
+
   return {
     connected,
     messages,
@@ -235,5 +250,6 @@ export function useConversationSocket(conversationId?: string) {
     onlineUsers,
     typingUser,
     aiStreaming,
+    emitTyping,
   };
 }

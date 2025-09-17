@@ -67,6 +67,7 @@ export default function Conversation() {
     aiStreaming,
     onlineUsers,
     typingUser,
+    emitTyping,
   } = useConversationSocket(conversationId);
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -396,13 +397,24 @@ export default function Conversation() {
                       <h2 className="font-semibold text-gray-800 text-sm sm:text-base">
                         {headerName}
                       </h2>
-                      <p className="text-xs sm:text-sm text-gray-500">
-                        {typingUser === otherUserId
-                          ? "typing..."
-                          : onlineUsers.has(otherUserId!)
-                          ? "Online"
-                          : "Offline"}
-                      </p>
+                      {conversationInfo?.title !== "AI-Assistant" &&
+                      !conversationInfo?.isGroup ? (
+                        <p className="text-xs sm:text-sm text-gray-500">
+                          {typingUser === otherUserId
+                            ? "typing..."
+                            : onlineUsers.has(otherUserId!)
+                            ? "Online"
+                            : "Offline"}
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-xs sm:text-sm text-gray-500">
+                            {conversationInfo.participants
+                              .map((p) => p.user.firstName)
+                              .join(", ")}
+                          </p>
+                        </>
+                      )}
                     </div>
                   </>
                 )}
@@ -607,7 +619,31 @@ export default function Conversation() {
               } else {
                 return (
                   <div
-                    className={`rounded-2xl p-[3.5px] w-fit max-w-prose group-hover:shadow-md transition-shadow
+                    className="flex justify-start gap-1 group"
+                    key={message.id}
+                  >
+                    {conversationInfo?.isGroup && !message.isAi && (
+                      <Avatar className="w-6 h-6 border border-purple-200">
+                        {message?.sender?.imageUrl ? (
+                          <AvatarImage
+                            src={message?.sender?.imageUrl}
+                            alt={
+                              message?.sender
+                                ? `${message.sender.firstName}`
+                                : "User"
+                            }
+                          />
+                        ) : (
+                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold">
+                            {message?.sender?.firstName
+                              ? message.sender.firstName.charAt(0).toUpperCase()
+                              : "U"}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                    )}
+                    <div
+                      className={`rounded-2xl p-[3.5px] w-fit max-w-prose group-hover:shadow-md transition-shadow
     ${
       message.isAi
         ? aiConversationPairKey?.startsWith("ai")
@@ -615,36 +651,51 @@ export default function Conversation() {
           : "bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 mx-auto bg-[length:200%_200%] animate-gradientMove"
         : "bg-white shadow-sm border border-purple-100 mr-auto"
     }`}
-                  >
-                    <div
-                      className={`rounded-2xl px-4 py-3 overflow-auto bg-white w-full ${
-                        message.isAi && !aiConversationPairKey?.startsWith("ai")
-                          ? "text-gray-900"
-                          : "text-gray-800"
-                      }`}
                     >
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {message.content || ""}
-                      </ReactMarkdown>
+                      <div
+                        className={`rounded-2xl px-4 py-3 overflow-auto bg-white w-full ${
+                          message.isAi &&
+                          !aiConversationPairKey?.startsWith("ai")
+                            ? "text-gray-900"
+                            : "text-gray-800"
+                        }`}
+                      >
+                        {conversationInfo?.isGroup && !message.isAi && (
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-sm font-medium text-gray-800">
+                              {message?.sender
+                                ? `${message.sender.firstName ?? ""}`.trim() ||
+                                  message.sender.clerkId
+                                : "Unknown User"}
+                            </span>
+                          </div>
+                        )}
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.content || ""}
+                        </ReactMarkdown>
 
-                      {message.imageUrl && (
-                        <div className="mt-3">
-                          <img
-                            src={message.imageUrl}
-                            alt="Shared image"
-                            className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-lg border border-purple-100 shadow-sm object-contain"
-                          />
-                        </div>
-                      )}
+                        {message.imageUrl && (
+                          <div className="mt-3">
+                            <img
+                              src={message.imageUrl}
+                              alt="Shared image"
+                              className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-lg border border-purple-100 shadow-sm object-contain"
+                            />
+                          </div>
+                        )}
 
-                      {!isStreaming && (
-                        <span className="text-xs text-gray-500 whitespace-nowrap mt-2 flex justify-end">
-                          {new Date(message.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      )}
+                        {!isStreaming && (
+                          <span className="text-xs text-gray-500 whitespace-nowrap mt-2 flex justify-end">
+                            {new Date(message.createdAt).toLocaleTimeString(
+                              [],
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -748,19 +799,12 @@ export default function Conversation() {
                       </span>
                     )}
                   </div>
-                  {/* <input
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    className="relative w-full px-6 py-3 text-base rounded-2xl border border-purple-200 
-    focus:border-purple-400 focus:ring-purple-400 bg-transparent caret-black outline-none 
-    resize-none overflow-auto max-h-40"
-                    placeholder="Type a message..."
-                    autoComplete="off"
-                  /> */}
                   <TextareaAutosize
                     value={text}
-                    onChange={(e) => setText(e.target.value)}
+                    onChange={(e) => {
+                      setText(e.target.value);
+                      emitTyping(); // 👈 trigger typing event
+                    }}
                     onKeyDown={handleKeyPress}
                     minRows={1}
                     maxRows={6}

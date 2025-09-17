@@ -25,6 +25,16 @@ export function useConversationSocket(conversationId?: string) {
   const [aiStreaming, setAiStreaming] = useState(false);
   const [connected, setConnected] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [typingUser, setTypingUser] = useState<string | null>(null);
+
+  //     const handleTyping = () => {
+  //   if (!socketRef.current) return;
+  //   socketRef.current.emit("typing", { conversationId });
+  //   const typingTimeout: NodeJS.Timeout = setTimeout(() => {
+  //     socketRef.current?.emit("stopTyping", { conversationId });
+  //   }, 2000);
+  // };
 
   useEffect(() => {
     let mounted = true;
@@ -96,7 +106,29 @@ export function useConversationSocket(conversationId?: string) {
           setMessages((prev) => prev.filter((m) => m.id !== id));
         });
 
-       
+        socket.on("onlineUsers", (users: string[]) => {
+          setOnlineUsers(new Set(users));
+        });
+
+        socket.on("userOnline", ({ clerkId }) => {
+          setOnlineUsers((prev) => new Set(prev).add(clerkId));
+        });
+
+        socket.on("userOffline", ({ clerkId }) => {
+          setOnlineUsers((prev) => {
+            const copy = new Set(prev);
+            copy.delete(clerkId);
+            return copy;
+          });
+        });
+
+        socket.on("userTyping", ({ clerkId }) => {
+          setTypingUser(clerkId);
+        });
+
+        socket.on("userStopTyping", ({ clerkId }) => {
+          if (typingUser === clerkId) setTypingUser(null);
+        });
 
         socket.on("disconnect", (reason) => {
           console.log("socket disconnected", reason);
@@ -162,7 +194,6 @@ export function useConversationSocket(conversationId?: string) {
         socketRef.current = null;
       }
     };
-    
   }, [getToken, conversationId]);
   interface SendMessageResult {
     ok: boolean;
@@ -197,5 +228,12 @@ export function useConversationSocket(conversationId?: string) {
     );
   };
 
-  return { connected, messages, sendMessage, aiStreaming };
+  return {
+    connected,
+    messages,
+    sendMessage,
+    onlineUsers,
+    typingUser,
+    aiStreaming,
+  };
 }

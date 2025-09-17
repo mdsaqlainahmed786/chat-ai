@@ -13,15 +13,15 @@ export function initSocketServer(server: http.Server) {
       credentials: true,
     },
   });
+  const onlineUsers = new Set<string>();
 
-  // AUTH MIDDLEWARE: verify Clerk token -> resolve local User -> attach to socket.data imp hai
+  // AUTH MIDDLEWARE
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token as string | undefined;
       if (!token) {
         return next(new Error("no-auth-token"));
       }
-
 
       const verified = await verifyToken(token, {
         secretKey: process.env.CLERK_SECRET_KEY,
@@ -31,21 +31,15 @@ export function initSocketServer(server: http.Server) {
         return next(new Error("invalid-token"));
       }
 
-      const clerkUserId = verified.sub;
+      const clerkId = verified.sub;
 
-
-      const localUser = await prisma.user.findUnique({ where: { clerkId: clerkUserId } });
-
+      const localUser = await prisma.user.findUnique({ where: { clerkId } });
       if (!localUser) {
-
         return next(new Error("user-not-in-db"));
       }
 
-
-      socket.data.userId = localUser.id;       // <-- local DB PK (use this for joins/messages)
-      socket.data.clerkId = localUser.clerkId; // <-- clerk user id (optional)
+      socket.data.clerkId = clerkId;
       socket.data.user = {
-        id: localUser.id,
         clerkId: localUser.clerkId,
         firstName: localUser.firstName,
         imageUrl: localUser.imageUrl,
@@ -59,27 +53,32 @@ export function initSocketServer(server: http.Server) {
     }
   });
 
-
   io.engine.on("connection_error", (err) => {
     console.error("engine connection_error:", err);
   });
 
   io.on("connection", (socket) => {
-    const localId = socket.data.userId;
-    console.log(`socket connected ${socket.id} localUserId=${localId}`);
+    const clerkId = socket.data.clerkId as string | undefined;
+    console.log(`socket connected ${socket.id} clerkId=${clerkId}`);
+     onlineUsers.add(clerkId!);
+  socket.emit("onlineUsers", Array.from(onlineUsers));
+  socket.broadcast.emit("userOnline", { clerkId });
+    io.emit("userOnline", { clerkId });
 
     socket.on("joinRoom", async (payload: { conversationId: string }, ack) => {
       try {
         const conversationId = payload?.conversationId;
         if (!conversationId) return ack?.({ ok: false, error: "conversationId required" });
 
-        const userId = socket.data.userId as string | undefined;
-        if (!userId) return ack?.({ ok: false, error: "not authenticated" });
+        if (!clerkId) return ack?.({ ok: false, error: "not authenticated" });
 
-        // ensure user is a participant
+        // Ensure user is a participant (using DB check, but by clerkId)
+        const user = await prisma.user.findUnique({ where: { clerkId } });
+        if (!user) return ack?.({ ok: false, error: "user not found" });
+
         const participant = await prisma.conversationParticipant.findUnique({
           where: {
-            userId_conversationId: { userId, conversationId },
+            userId_conversationId: { userId: user.id, conversationId },
           },
         });
 
@@ -87,12 +86,10 @@ export function initSocketServer(server: http.Server) {
           return ack?.({ ok: false, error: "not a participant of this conversation" });
         }
 
-        // join socket.io room
         socket.join(conversationId);
-        console.log(`user ${userId} joined room ${conversationId}`);
+        console.log(`clerkId=${clerkId} joined room ${conversationId}`);
 
-        // Fetch messages from DB in chronological order (old → new)
-        // Consider adding `take`/pagination if you expect many messages.
+        // Fetch messages
         const messages = await prisma.message.findMany({
           where: { conversationId },
           include: { sender: true },
@@ -107,14 +104,12 @@ export function initSocketServer(server: http.Server) {
           isAi: m.isAi,
           createdAt: m.createdAt.toISOString(),
           sender: {
-            id: m.sender.id,
             clerkId: m.sender.clerkId,
             firstName: m.sender.firstName,
             imageUrl: m.sender.imageUrl,
           },
         }));
 
-        // Return messages in the ack so client can initialize state
         return ack?.({ ok: true, messages: payloadMessages });
       } catch (err: any) {
         console.error("joinRoom error:", err);
@@ -122,41 +117,44 @@ export function initSocketServer(server: http.Server) {
       }
     });
 
+    // Typing events now emit clerkId
+    socket.on("typing", ({ conversationId }) => {
+      socket.to(conversationId).emit("userTyping", { clerkId });
+    });
 
+    socket.on("stopTyping", ({ conversationId }) => {
+      socket.to(conversationId).emit("userStopTyping", { clerkId });
+    });
 
+    // New message
     socket.on(
       "sendMessage",
       async (payload: { conversationId: string; content?: string; imageUrl?: string; isAi?: boolean }, ack) => {
         try {
           const { conversationId, content, imageUrl, isAi } = payload;
-          // console.log("sendMessage payload:", payload);
-          // console.log("socket.data:", socket.data);
-          // console.log("ConversationId:", conversationId);
           if (!conversationId) return ack?.({ ok: false, error: "conversationId required" });
+          if (!clerkId) return ack?.({ ok: false, error: "not authenticated" });
 
-          const userId = socket.data.userId as string | undefined;
-          if (!userId) return ack?.({ ok: false, error: "not authenticated" });
-
+          const sender = await prisma.user.findUnique({ where: { clerkId } });
+          if (!sender) return ack?.({ ok: false, error: "user not found" });
 
           const participant = await prisma.conversationParticipant.findUnique({
             where: {
-              userId_conversationId: { userId, conversationId },
+              userId_conversationId: { userId: sender.id, conversationId },
             },
           });
           if (!participant) return ack?.({ ok: false, error: "not a participant" });
 
-
           const message = await prisma.message.create({
             data: {
               conversationId,
-              senderId: userId,
+              senderId: sender.id,
               content: content ?? null,
               imageUrl: imageUrl ?? null,
               isAi: !!isAi,
             },
             include: { sender: true },
           });
-
 
           io.to(conversationId).emit("newMessage", {
             id: message.id,
@@ -166,12 +164,12 @@ export function initSocketServer(server: http.Server) {
             isAi: message.isAi,
             createdAt: message.createdAt,
             sender: {
-              id: message.sender.id,
               clerkId: message.sender.clerkId,
               firstName: message.sender.firstName,
               imageUrl: message.sender.imageUrl,
             },
           });
+
           return ack?.({ ok: true, messageId: message.id });
         } catch (err: any) {
           console.error("sendMessage error:", err);
@@ -180,10 +178,11 @@ export function initSocketServer(server: http.Server) {
       }
     );
 
-
-
     socket.on("disconnect", (reason) => {
       console.log(`socket disconnected ${socket.id} reason=${reason}`);
+      io.emit("userOffline", { clerkId });
+      onlineUsers.delete(clerkId!);
+      socket.broadcast.emit("userOffline", { clerkId });
     });
   });
 

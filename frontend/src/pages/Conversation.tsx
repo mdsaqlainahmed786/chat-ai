@@ -60,8 +60,14 @@ export default function Conversation() {
   >(null);
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
-  const { connected, messages, sendMessage, aiStreaming } =
-    useConversationSocket(conversationId);
+  const {
+    connected,
+    messages,
+    sendMessage,
+    aiStreaming,
+    onlineUsers,
+    typingUser,
+  } = useConversationSocket(conversationId);
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -121,6 +127,7 @@ export default function Conversation() {
 
   let headerName = "Chat Room";
   let headerAvatar: string | null = null;
+  let otherUserId: string | null = null;
 
   if (conversationInfo) {
     if (conversationInfo.isGroup) {
@@ -134,6 +141,7 @@ export default function Conversation() {
           `${other.firstName ?? ""} ${other.lastName ?? ""}`.trim() ||
           other.clerkId;
         headerAvatar = other.imageUrl ?? null;
+        otherUserId = other.clerkId;
       }
     }
   }
@@ -327,7 +335,7 @@ export default function Conversation() {
         import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
       const res = await axios.delete(`${baseUrl}/chat/delete-message`, {
         headers: { Authorization: `Bearer ${token}` },
-        data: { messageId: id }
+        data: { messageId: id },
       });
 
       if (res.data?.ok) {
@@ -356,7 +364,7 @@ export default function Conversation() {
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div className="flex justify-between items-center gap-3">
+              <div className="flex items-center gap-3">
                 {loadingInfo ? (
                   <>
                     <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
@@ -367,23 +375,35 @@ export default function Conversation() {
                   </>
                 ) : (
                   <>
-                    <Avatar className="w-10 h-10 border border-purple-200">
-                      {conversationInfo?.title === "AI-Assistant" &&
-                      !conversationInfo.isGroup ? (
-                        <>
+                    <div className="relative">
+                      <Avatar className="w-10 h-10 border border-purple-200">
+                        {conversationInfo?.title === "AI-Assistant" &&
+                        !conversationInfo.isGroup ? (
                           <AiConversationAvatar className="pb-4" />
-                        </>
-                      ) : headerAvatar ? (
-                        <AvatarImage src={headerAvatar} alt={headerName} />
-                      ) : (
-                        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold">
-                          {headerName.charAt(0).toUpperCase()}
-                        </AvatarFallback>
+                        ) : headerAvatar ? (
+                          <AvatarImage src={headerAvatar} alt={headerName} />
+                        ) : (
+                          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-purple-600 text-white font-semibold">
+                            {headerName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      {onlineUsers.has(otherUserId!) && (
+                        <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full ring-2 ring-white" />
                       )}
-                    </Avatar>
-                    <h2 className="font-semibold text-gray-800">
-                      {headerName}
-                    </h2>
+                    </div>
+                    <div className="flex flex-col">
+                      <h2 className="font-semibold text-gray-800 text-sm sm:text-base">
+                        {headerName}
+                      </h2>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        {typingUser === otherUserId
+                          ? "typing..."
+                          : onlineUsers.has(otherUserId!)
+                          ? "Online"
+                          : "Offline"}
+                      </p>
+                    </div>
                   </>
                 )}
               </div>
@@ -397,6 +417,7 @@ export default function Conversation() {
                   >
                     <Trash2 className="h-5 w-5 text-gray-500" />
                   </button>
+
                   <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
                     <DialogContent className="sm:max-w-md">
                       <DialogHeader>

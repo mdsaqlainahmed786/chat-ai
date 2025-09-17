@@ -161,7 +161,7 @@ export default function ChatsPage() {
           setConversations(data?.conversations);
           // setConversationPairKeys(data.conversationPairKeys);
         }
-        console.log("Fetched conversations:", data);
+        // console.log("Fetched conversations:", data);
       } catch (err) {
         console.error("fetchConversations error:", err);
       } finally {
@@ -197,7 +197,7 @@ export default function ChatsPage() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      console.log("Invite link generated:", res.data);
+      // console.log("Invite link generated:", res.data);
       // copying to clipboard
       await navigator.clipboard.writeText(res.data.invite.url);
       alert("Invite link copied to clipboard");

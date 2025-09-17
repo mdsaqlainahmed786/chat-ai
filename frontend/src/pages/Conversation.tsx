@@ -73,7 +73,7 @@ export default function Conversation() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log("MESSAGES", messages);
+    // console.log("MESSAGES", messages);
     // console.log("CONVERSATION Info", conversationInfo);
     // if(!aiConversationPairKey?.startsWith('ai') || text.startsWith('@AI') && messages.length > 0) {
     //   console.log("Last message from AI")
@@ -110,7 +110,7 @@ export default function Conversation() {
         if (!cancelled) {
           setConversationInfo(found);
           setAiConversationPairKey(found?.pairKey ?? null);
-          console.log("Fetched conversation info:", found);
+          // console.log("Fetched conversation info:", found);
         }
       } catch (err) {
         console.error("fetchConversation error:", err);

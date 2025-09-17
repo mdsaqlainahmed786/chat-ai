@@ -99,8 +99,7 @@ export default function Conversation() {
           }
         );
         //@ts-expect-error ignore
-        const found =
-          res.data.conversations?.find((c) => c.id === conversationId) ?? null;
+        const found = res.data.conversations?.find((c) => c.id === conversationId) ?? null;
         if (!cancelled) {
           setConversationInfo(found);
           setAiConversationPairKey(found?.pairKey ?? null);

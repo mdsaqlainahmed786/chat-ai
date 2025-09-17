@@ -382,3 +382,71 @@ chatRouter.post(
     }
   }
 );
+
+chatRouter.put("/edit-message", async (req: Request, res: Response) => {
+  try {
+    let { userId } = getAuth(req as any);
+    if (!userId) userId = await getUserIdFromRequest(req);
+
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+    const { messageId, newContent } = req.body as { messageId?: string; newContent?: string };
+    if (!messageId || !newContent) return res.status(400).json({ error: "messageId and newContent are required" });
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!user) return res.status(400).json({ error: "User not found in DB" });
+    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) return res.status(404).json({ error: "Message not found" });
+    if (message.senderId !== user.id) return res.status(403).json({ error: "You can only edit your own messages" });
+    const updatedMessage = await prisma.message.update({
+      where: { id: messageId },
+      data: { content: newContent },
+      include: { sender: true },
+    });
+    const io = req.app.get("io");
+    if (io) {
+      io.to(updatedMessage.conversationId).emit("messageEdited", {
+        id: updatedMessage.id,
+        conversationId: updatedMessage.conversationId,
+        content: updatedMessage.content,
+        imageUrl: updatedMessage.imageUrl,
+        isAi: updatedMessage.isAi,
+        createdAt: updatedMessage.createdAt,
+        sender: {
+          id: updatedMessage.sender.id,
+          clerkId: updatedMessage.sender.clerkId,
+          firstName: updatedMessage.sender.firstName,
+          imageUrl: updatedMessage.sender.imageUrl,
+        },
+      });
+    }
+    return res.json({ message: updatedMessage });
+  } catch (err: any) {
+    console.error("ERROR /chat/edit-message:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+})
+
+
+chatRouter.delete("/delete-message", async (req: Request, res: Response) => {
+  try {
+    let { userId } = getAuth(req as any);
+    if (!userId) userId = await getUserIdFromRequest(req);
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+    const { messageId } = req.body as { messageId?: string };
+    if (!messageId) return res.status(400).json({ error: "messageId is required" });
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!user) return res.status(400).json({ error: "User not found in DB" });
+    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) return res.status(404).json({ error: "Message not found" });
+    if (message.senderId !== user.id) return res.status(403).json({ error: "You can only delete your own messages" });
+    await prisma.message.delete({ where: { id: messageId } });
+    const io = req.app.get("io");
+    if (io) {
+      io.to(message.conversationId).emit("messageDeleted", { id: messageId });
+    }
+    return res.json({ message: "Message deleted" });
+  } catch (err: any) {
+    console.error("ERROR /chat/delete-message:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+})

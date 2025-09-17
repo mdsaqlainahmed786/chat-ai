@@ -57,7 +57,7 @@ export default function Conversation() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    // console.log("MESSAGES", messages);
+    console.log("MESSAGES", messages);
   }, [messages]);
 
   useEffect(() => {
@@ -454,9 +454,8 @@ export default function Conversation() {
         : "bg-white shadow-sm border border-purple-100 mr-auto"
     }`}
                   >
-                    {/* Inner box */}
                     <div
-                      className={`rounded-2xl px-4 py-3 bg-white w-full ${
+                      className={`rounded-2xl px-4 py-3 overflow-auto bg-white w-full ${
                         message.isAi && !aiConversationPairKey?.startsWith("ai")
                           ? "text-gray-900"
                           : "text-gray-800"

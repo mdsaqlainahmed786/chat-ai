@@ -84,6 +84,20 @@ export function useConversationSocket(conversationId?: string) {
           }
         });
 
+        socket.on("messageEdited", (updatedMessage: Msg) => {
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === updatedMessage.id ? { ...m, ...updatedMessage } : m
+            )
+          );
+        });
+
+        socket.on("messageDeleted", ({ id }: { id: string }) => {
+          setMessages((prev) => prev.filter((m) => m.id !== id));
+        });
+
+       
+
         socket.on("disconnect", (reason) => {
           console.log("socket disconnected", reason);
           if (!mounted) return;
@@ -148,6 +162,7 @@ export function useConversationSocket(conversationId?: string) {
         socketRef.current = null;
       }
     };
+    
   }, [getToken, conversationId]);
   interface SendMessageResult {
     ok: boolean;

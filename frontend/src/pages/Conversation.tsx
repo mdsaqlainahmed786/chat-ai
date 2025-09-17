@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useConversationSocket } from "../hooks/useConversation";
-import { Image as ImageIcon, X, Send, Sparkles } from "lucide-react";
+import {
+  Image as ImageIcon,
+  X,
+  Send,
+  Sparkles,
+  MoreVertical,
+} from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import TextareaAutosize from "react-textarea-autosize";
@@ -46,6 +52,9 @@ export default function Conversation() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [editMessageId, setEditMessageId] = useState<string | null>(null);
+  const [editContent, setEditContent] = useState("");
   const [aiConversationPairKey, setAiConversationPairKey] = useState<
     string | null
   >(null);
@@ -58,6 +67,10 @@ export default function Conversation() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     console.log("MESSAGES", messages);
+    // console.log("CONVERSATION Info", conversationInfo);
+    // if(!aiConversationPairKey?.startsWith('ai') || text.startsWith('@AI') && messages.length > 0) {
+    //   console.log("Last message from AI")
+    // }
   }, [messages]);
 
   useEffect(() => {
@@ -86,11 +99,12 @@ export default function Conversation() {
           }
         );
         //@ts-expect-error ignore
-        const found = res.data.conversations?.find((c) => c.id === conversationId) ?? null;
+        const found =
+          res.data.conversations?.find((c) => c.id === conversationId) ?? null;
         if (!cancelled) {
           setConversationInfo(found);
           setAiConversationPairKey(found?.pairKey ?? null);
-          // console.log("Fetched conversation info:", found);
+          console.log("Fetched conversation info:", found);
         }
       } catch (err) {
         console.error("fetchConversation error:", err);
@@ -270,6 +284,64 @@ export default function Conversation() {
     }
   };
 
+  const handleEditMessage = async (editMessageId: string) => {
+    if (!conversationId) return;
+    try {
+      const token = await getToken({ template: "default" });
+      console.log("token", token);
+      if (!token) {
+        console.warn("No token from Clerk");
+        return;
+      }
+      const baseUrl =
+        import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+      const res = await axios.put(
+        `${baseUrl}/chat/edit-message`,
+        {
+          messageId: editMessageId,
+          newContent: editContent,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (res.data?.ok) {
+        console.log("Message edited successfully");
+        setEditMessageId(null);
+        setEditContent("");
+        setOpenMenuId(null);
+      } else {
+        console.warn("Failed to edit message:", res.data);
+      }
+    } catch (err) {
+      console.error("Error editing message:", err);
+    }
+  };
+  const handleDelete = async (id: string) => {
+    try {
+      const token = await getToken({ template: "default" });
+      if (!token) {
+        console.warn("No token from Clerk");
+        return;
+      }
+      const baseUrl =
+        import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+      const res = await axios.delete(`${baseUrl}/chat/delete-message`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: { messageId: id }
+      });
+
+      if (res.data?.ok) {
+        console.log("Message deleted successfully");
+      } else {
+        console.warn("Failed to delete message:", res.data);
+      }
+      setOpenMenuId(null);
+    } catch (err) {
+      console.error("Delete failed:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100">
       {/* Header */}
@@ -411,24 +483,72 @@ export default function Conversation() {
                           </span>
                         </div>
                       )}
-                      <div className="bg-purple-400 rounded-2xl px-4 py-3 shadow-sm border border-purple-100 group-hover:shadow-md transition-shadow max-w-fit ml-auto">
-                        <div className="text-white flex flex-row justify-end text-end gap-2 prose prose-sm max-w-none leading-relaxed">
-                          <p className={`leading-relaxed`}>
-                            {" "}
-                            {message.content}
-                          </p>
-                          <div className="flex items-end gap-2 -mb-1 -mr-2">
-                            <span className="text-xs text-slate-300">
-                              {new Date(message.createdAt).toLocaleTimeString(
-                                [],
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                }
-                              )}
-                            </span>
+
+                      <div className="bg-purple-400 rounded-2xl px-4 py-3 shadow-sm border border-purple-100 group-hover:shadow-md transition-shadow max-w-fit ml-auto relative">
+                        {editMessageId === message.id ? (
+                          <div className="flex flex-col gap-2">
+                            <textarea
+                              value={editContent}
+                              onChange={(e) => setEditContent(e.target.value)}
+                              className="w-full rounded-md border p-2 text-black text-sm"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => {
+                                  handleEditMessage(message.id);
+                                  setEditMessageId(null);
+                                  setOpenMenuId(null);
+                                }}
+                                className="text-xs bg-green-500 text-white px-2 py-1 rounded"
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={() => setEditMessageId(null)}
+                                className="text-xs bg-gray-400 text-white px-2 py-1 rounded"
+                              >
+                                Cancel
+                              </button>
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <>
+                            {message.imageUrl === null &&
+                              !conversationInfo?.pairKey?.startsWith("ai") &&
+                              !message?.content?.startsWith("@AI") && (
+                                <button
+                                  onClick={() =>
+                                    setOpenMenuId(
+                                      openMenuId === message.id
+                                        ? null
+                                        : message.id
+                                    )
+                                  }
+                                  className="absolute cursor-pointer top-3 right-1 opacity-70 md:opacity-0 hover:opacity-100 text-white"
+                                >
+                                  <MoreVertical size={16} />
+                                </button>
+                              )}
+
+                            <div className="text-white flex flex-col text-end prose prose-sm max-w-none leading-relaxed">
+                              <p className="leading-relaxed mr-3">
+                                {message.content}
+                              </p>
+                              <div className="flex justify-end mt-1">
+                                <span className="text-xs text-slate-300">
+                                  {new Date(
+                                    message.createdAt
+                                  ).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Image if present */}
                         {message.imageUrl && (
                           <div className="mt-3">
                             <img
@@ -436,6 +556,28 @@ export default function Conversation() {
                               alt="Shared image"
                               className="w-full max-w-[250px] sm:max-w-[350px] md:max-w-[450px] lg:max-w-[550px] rounded-xl border border-purple-100 shadow-sm object-cover"
                             />
+                          </div>
+                        )}
+
+                        {/* Dropdown modal */}
+                        {openMenuId === message.id && (
+                          <div className="absolute top-8 right-2 bg-white border rounded-lg shadow-md z-10 w-28 flex flex-col text-sm">
+                            <button
+                              onClick={() => {
+                                setEditMessageId(message.id);
+                                setEditContent(message.content ?? "");
+                                setOpenMenuId(null);
+                              }}
+                              className="px-3 py-2 text-left hover:bg-gray-100"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(message.id)}
+                              className="px-3 py-2 text-left hover:bg-gray-100 text-red-500"
+                            >
+                              Delete
+                            </button>
                           </div>
                         )}
                       </div>

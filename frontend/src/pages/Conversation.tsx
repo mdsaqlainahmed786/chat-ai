@@ -63,23 +63,7 @@ export default function Conversation() {
   >(null);
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
-  // Define Msg type to include audioUrl
-  type Msg = {
-    id: string;
-    content?: string | null;
-    imageUrl?: string | null;
-    audioUrl?: string | null;
-    createdAt: string;
-    sender?: {
-      clerkId: string;
-      firstName?: string | null;
-      lastName?: string | null;
-      imageUrl?: string | null;
-    };
-    isAi?: boolean;
-    isGroup?: boolean;
-    temp?: boolean;
-  };
+
 
   const {
     connected,
@@ -101,7 +85,7 @@ export default function Conversation() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    // console.log("MESSAGES", messages);
+    console.log("MESSAGES", messages);
     // console.log("CONVERSATION Info", conversationInfo);
     // if(!aiConversationPairKey?.startsWith('ai') || text.startsWith('@AI') && messages.length > 0) {
     //   console.log("Last message from AI")
@@ -533,8 +517,7 @@ export default function Conversation() {
               </div>
             </div>
           ) : (
-            //@ts-expect-error ignore
-            messages.map((message: Msg) => {
+            messages.map((message) => {
               const isStreaming = message.temp;
               if (userId === message?.sender?.clerkId) {
                 return (

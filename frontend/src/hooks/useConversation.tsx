@@ -8,6 +8,7 @@ type Msg = {
   conversationId: string;
   content?: string | null;
   imageUrl?: string | null;
+  audioUrl?: string | null;
   isAi: boolean;
   createdAt: string;
   sender: {

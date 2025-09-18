@@ -140,7 +140,14 @@ export function initSocketServer(server: http.Server) {
         if (!clerkId) return ack?.({ ok: false, error: "not authenticated" });
 
         const sender = await prisma.user.findUnique({ where: { clerkId } });
-        if (!sender) return ack?.({ ok: false, error: "user not found" });
+          if (!sender) return ack?.({ ok: false, error: "user not found" });
+
+          const participant = await prisma.conversationParticipant.findUnique({
+            where: {
+              userId_conversationId: { userId: sender.id, conversationId },
+            },
+          });
+          if (!participant) return ack?.({ ok: false, error: "not a participant" });
 
         const message = await prisma.message.create({
           data: {

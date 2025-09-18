@@ -563,7 +563,7 @@ export default function Conversation() {
                           </div>
                         ) : (
                           <>
-                            {message.imageUrl === null &&
+                            {message.imageUrl === null && message.audioUrl === null && 
                               !conversationInfo?.pairKey?.startsWith("ai") &&
                               !message?.content?.startsWith("@AI") && (
                                 <button

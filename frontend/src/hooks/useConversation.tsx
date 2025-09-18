@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "@clerk/clerk-react";
+import axios from "axios";
 
 type Msg = {
   id: string;
@@ -31,8 +32,10 @@ export function useConversationSocket(conversationId?: string) {
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
   const [typingUser, setTypingUser] = useState<string | null>(null);
   const [recording, setRecording] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [pinnedMessage, setPinnedMessage] = useState<Msg | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -100,6 +103,14 @@ export function useConversationSocket(conversationId?: string) {
 
         socket.on("messageDeleted", ({ id }: { id: string }) => {
           setMessages((prev) => prev.filter((m) => m.id !== id));
+        });
+
+        socket.on("messagePinned", ({ pinnedMessage }) => {
+          setPinnedMessage(pinnedMessage);
+        });
+
+        socket.on("messageUnpinned", () => {
+          setPinnedMessage(null);
         });
 
         socket.on("onlineUsers", (users: string[]) => {
@@ -191,6 +202,35 @@ export function useConversationSocket(conversationId?: string) {
       }
     };
   }, [getToken, conversationId]);
+
+useEffect(() => {
+if (!conversationId) return;
+        
+  const fetchPinnedMessage = async () => {
+    const token = await getToken({ template: "default" });
+    if (!token) {
+      console.warn("No token from Clerk");
+      return;
+    }
+    setToken(token);
+    try {
+      const baseUrl =
+        import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+      const res = await axios.get(`${baseUrl}/chat/pinned-message/${conversationId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data?.pinnedMessage) {
+        setPinnedMessage(res.data.pinnedMessage);
+      } else {
+        setPinnedMessage(null);
+      }
+    } catch (err) {
+      console.error("Failed to fetch pinned message:", err);
+    }
+  };
+
+  fetchPinnedMessage();
+}, [conversationId, token]);
   interface SendMessageResult {
     ok: boolean;
     messageId?: string;
@@ -238,77 +278,77 @@ export function useConversationSocket(conversationId?: string) {
     }, 2000);
   };
 
-const startRecording = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const recorder = new MediaRecorder(stream);
-    mediaRecorderRef.current = recorder;
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
 
-    const chunks: BlobPart[] = [];
-    recorder.ondataavailable = (e) => {
-      if (e.data.size > 0) {
-        chunks.push(e.data);
-      }
-    };
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          chunks.push(e.data);
+        }
+      };
 
-    recorder.onstop = () => {
-      const blob = new Blob(chunks, { type: "audio/webm" });
-      setAudioBlob(blob); 
-      setPreviewAudio(URL.createObjectURL(blob));
-    };
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "audio/webm" });
+        setAudioBlob(blob);
+        setPreviewAudio(URL.createObjectURL(blob));
+      };
 
-    recorder.start();
-    setRecording(true);
-  } catch (err) {
-    console.error("Error starting recording:", err);
-  }
-};
+      recorder.start();
+      setRecording(true);
+    } catch (err) {
+      console.error("Error starting recording:", err);
+    }
+  };
 
-const stopRecording = () => {
-  if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-    mediaRecorderRef.current.stop();
-  }
-  setRecording(false);
-};
-
-
-const sendAudioMessage = async () => {
-  if (!audioBlob || !conversationId) {
-    console.error("No audioBlob or conversationId");
-    return;
-  }
-
-  console.log("Uploading audio message...", audioBlob);
-
-  try {
-    const formData = new FormData();
-    formData.append("audio", audioBlob, "recording.webm");
-    formData.append("conversationId", conversationId);
-
-    const res = await fetch(
-      `${import.meta.env.VITE_SOCKET_URL}/chat/upload-audio`,
-      {
-        method: "POST",
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${await getToken({ template: "default" })}`,
-        },
-      }
-    );
-
-    if (!res.ok) throw new Error("Upload failed");
-    const data = await res.json();
-    console.log("Audio uploaded:", data);
-    setPreviewAudio(null);
-    setAudioBlob(null);
-  } catch (err) {
-    console.error("Error uploading audio:", err);
-  } finally {
+  const stopRecording = () => {
+    if (
+      mediaRecorderRef.current &&
+      mediaRecorderRef.current.state !== "inactive"
+    ) {
+      mediaRecorderRef.current.stop();
+    }
     setRecording(false);
-  }
-};
+  };
 
+  const sendAudioMessage = async () => {
+    if (!audioBlob || !conversationId) {
+      console.error("No audioBlob or conversationId");
+      return;
+    }
 
+    console.log("Uploading audio message...", audioBlob);
+
+    try {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "recording.webm");
+      formData.append("conversationId", conversationId);
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SOCKET_URL}/chat/upload-audio`,
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            Authorization: `Bearer ${await getToken({ template: "default" })}`,
+          },
+        }
+      );
+
+      if (!res.ok) throw new Error("Upload failed");
+      const data = await res.json();
+      console.log("Audio uploaded:", data);
+      setPreviewAudio(null);
+      setAudioBlob(null);
+    } catch (err) {
+      console.error("Error uploading audio:", err);
+    } finally {
+      setRecording(false);
+    }
+  };
 
   return {
     connected,
@@ -326,5 +366,6 @@ const sendAudioMessage = async () => {
     setAudioBlob,
     audioBlob,
     sendAudioMessage,
+    pinnedMessage,
   };
 }

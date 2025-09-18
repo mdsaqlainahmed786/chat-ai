@@ -117,6 +117,25 @@ export function initSocketServer(server: http.Server) {
         return ack?.({ ok: false, error: "server error" });
       }
     });
+    socket.on("pinMessage", async ({ conversationId, messageId }) => {
+    const updated = await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { pinnedMessageId: messageId },
+      include: { pinnedMessage: { include: { sender: true } } },
+    });
+    io.to(conversationId).emit("messagePinned", {
+      conversationId,
+      pinnedMessage: updated.pinnedMessage,
+    });
+  });
+
+  socket.on("unpinMessage", async ({ conversationId }) => {
+    await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { pinnedMessageId: null },
+    });
+    io.to(conversationId).emit("messageUnpinned", { conversationId });
+  });
 
     // Typing events now emit clerkId
     socket.on("typing", ({ conversationId }) => {

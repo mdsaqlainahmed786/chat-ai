@@ -29,13 +29,15 @@ model User {
 }
 
 model Conversation {
-  id           String                    @id @default(cuid())
-  title        String?
-  pairKey      String?                   @unique
-  isGroup      Boolean                   @default(false)
+  id        String   @id @default(cuid())
+  title     String?
+  isGroup   Boolean  @default(false)
+  pairKey   String?  @unique
+  createdAt DateTime @default(now())
   participants ConversationParticipant[]
   messages     Message[]
-  createdAt    DateTime                  @default(now())
+  pinnedMessageId String? @unique
+  pinnedMessage   Message? @relation("PinnedMessage", fields: [pinnedMessageId], references: [id])
 }
 
 model ConversationParticipant {
@@ -50,14 +52,18 @@ model ConversationParticipant {
 }
 
 model Message {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   conversationId String
   senderId       String
-  content        String? // text content
-  imageUrl       String? // optional image URL (Cloudinary)
+  content        String?
+  imageUrl       String?
   audioUrl       String?
-  isAi           Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  sender         User         @relation(fields: [senderId], references: [id])
+  isAi           Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  sender       User         @relation(fields: [senderId], references: [id])
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+
+  // Pinned relation
+  pinnedInConversation Conversation? @relation("PinnedMessage")
 }

@@ -387,7 +387,6 @@ chatRouter.post(
         stream.end(req?.file?.buffer);
       });
 
-      // save message in DB
       const sender = await prisma.user.findUnique({ where: { clerkId: userId } });
       if (!sender) return res.status(400).json({ error: "User not found" });
       const message = await prisma.message.create({
@@ -399,7 +398,6 @@ chatRouter.post(
         include: { sender: true },
       });
 
-      // emit to the conversation room so all clients get it instantly
       const io = req.app.get("io");
       if (io) {
         io.to(conversationId).emit("newMessage", {
@@ -444,7 +442,6 @@ chatRouter.post(
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      // upload audio to Cloudinary
       const uploadResult = await new Promise<any>((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           { folder: "chat_audios", resource_type: "video" }, // ✅ audio treated as video
@@ -456,7 +453,6 @@ chatRouter.post(
         stream.end(req?.file?.buffer);
       });
 
-      // save message in DB
       const sender = await prisma.user.findUnique({ where: { clerkId: userId } });
       if (!sender) return res.status(400).json({ error: "User not found" });
 
@@ -464,12 +460,11 @@ chatRouter.post(
         data: {
           conversationId,
           senderId: sender.id,
-          audioUrl: uploadResult.secure_url, // ✅ save audioUrl
+          audioUrl: uploadResult.secure_url,
         },
         include: { sender: true },
       });
 
-      // emit to room
       const io = req.app.get("io");
       if (io) {
         io.to(conversationId).emit("newMessage", {
@@ -477,7 +472,7 @@ chatRouter.post(
           conversationId: message.conversationId,
           content: message.content,
           imageUrl: message.imageUrl,
-          audioUrl: message.audioUrl, // ✅ include in payload
+          audioUrl: message.audioUrl,
           isAi: message.isAi,
           createdAt: message.createdAt,
           sender: {
@@ -496,10 +491,6 @@ chatRouter.post(
     }
   }
 );
-
-
-
-
 
 chatRouter.delete("/delete-message", async (req: Request, res: Response) => {
   try {
@@ -524,3 +515,103 @@ chatRouter.delete("/delete-message", async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Server error" });
   }
 })
+
+
+chatRouter.put("/pin-message", async (req: Request, res: Response) => {
+  try {
+    let { userId } = getAuth(req as any);
+    if (!userId) userId = await getUserIdFromRequest(req);
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+    const { conversationId, messageId } = req.body as { conversationId?: string; messageId?: string };
+    if (!conversationId || !messageId) {
+      return res.status(400).json({ error: "conversationId and messageId required" });
+    }
+
+    const message = await prisma.message.findUnique({
+      where: { id: messageId },
+      include: { conversation: true },
+    });
+    if (!message || message.conversationId !== conversationId) {
+      return res.status(404).json({ error: "Message not found in conversation" });
+    }
+    const updated = await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { pinnedMessageId: messageId },
+      include: {
+        pinnedMessage: {
+          include: { sender: true },
+        },
+      },
+    });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(conversationId).emit("messagePinned", {
+        conversationId,
+        pinnedMessage: updated.pinnedMessage,
+      });
+    }
+
+    return res.json({ ok: true, pinnedMessage: updated.pinnedMessage });
+  } catch (err: any) {
+    console.error("ERROR /chat/pin-message:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+chatRouter.put("/unpin-message", async (req: Request, res: Response) => {
+  try {
+    let { userId } = getAuth(req as any);
+    if (!userId) userId = await getUserIdFromRequest(req);
+    if (!userId) return res.status(401).json({ error: "Not authenticated" });
+
+    const { conversationId } = req.body as { conversationId?: string };
+    if (!conversationId) return res.status(400).json({ error: "conversationId required" });
+
+    const updated = await prisma.conversation.update({
+      where: { id: conversationId },
+      data: { pinnedMessageId: null },
+    });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(conversationId).emit("messageUnpinned", { conversationId });
+    }
+
+    return res.json({ ok: true });
+  } catch (err: any) {
+    console.error("ERROR /chat/unpin-message:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+
+chatRouter.get("/pinned-message/:conversationId", async (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    if (!conversationId) {
+      return res.status(400).json({ error: "conversationId required" });
+    }
+
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        pinnedMessage: {
+          include: { sender: true },
+        },
+      },
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ error: "Conversation not found" });
+    }
+
+    return res.json({
+      pinnedMessage: conversation.pinnedMessage || null,
+    });
+  } catch (err) {
+    console.error("ERROR /chat/pinned-message:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+});
+

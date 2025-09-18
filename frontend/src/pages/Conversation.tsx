@@ -8,6 +8,7 @@ import {
   MoreVertical,
   Square,
   Mic,
+  PinIcon,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -64,7 +65,6 @@ export default function Conversation() {
   const { conversationId } = useParams<{ conversationId: string }>();
   const navigate = useNavigate();
 
-
   const {
     connected,
     messages,
@@ -80,16 +80,12 @@ export default function Conversation() {
     sendAudioMessage,
     setPreviewAudio,
     setAudioBlob,
+    pinnedMessage,
   } = useConversationSocket(conversationId);
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    console.log("MESSAGES", messages);
-    // console.log("CONVERSATION Info", conversationInfo);
-    // if(!aiConversationPairKey?.startsWith('ai') || text.startsWith('@AI') && messages.length > 0) {
-    //   console.log("Last message from AI")
-    // }
   }, [messages]);
 
   useEffect(() => {
@@ -137,6 +133,8 @@ export default function Conversation() {
       cancelled = true;
     };
   }, [conversationId, getToken]);
+
+
 
   let headerName = "Chat Room";
   let headerAvatar: string | null = null;
@@ -208,6 +206,9 @@ export default function Conversation() {
       console.error("sendMessage failed:", err);
     }
   };
+
+
+
 
   const handleSend = async () => {
     if ((!text.trim() && !selectedImage) || !conversationId) return;
@@ -368,6 +369,36 @@ export default function Conversation() {
     }
   };
 
+  const handleUnpinMessage = async (messageId: string) => {
+    if (!conversationId) return;
+    const token = await getToken({ template: "default" });
+    if (!token) {
+      console.warn("No token from Clerk");
+      return;
+    }
+    const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+    await axios.put(
+      `${baseUrl}/chat/unpin-message`,
+      { conversationId, messageId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  };
+
+  const handlePinMessage = async (messageId: string) => {
+    if (!conversationId) return;
+    const token = await getToken({ template: "default" });
+    if (!token) {
+      console.warn("No token from Clerk");
+      return;
+    }
+    const baseUrl = import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+    await axios.put(
+      `${baseUrl}/chat/pin-message`,
+      { conversationId, messageId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100">
       {/* Header */}
@@ -480,6 +511,27 @@ export default function Conversation() {
           </div>
         </div>
       </div>
+      {pinnedMessage && (
+        <div
+          onClick={() => {
+            const msg = messages.find((m) => m.id === pinnedMessage.id);
+            console.log("Scrolling to pinned message:", msg);
+            if (msg) {
+              const el = document.getElementById(`msg-${msg.id}`);
+              console.log("Found element:", el);
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+              }
+            }
+          }}
+          className="cursor-pointer flex items-center gap-2 bg-yellow-100 border sticky top-16 z-10 border-yellow-300 rounded-md px-3 py-2 mt-2 text-sm text-gray-700"
+        >
+          <span><PinIcon /></span>{pinnedMessage.content || "Pinned message"}
+          <span className="ml-2 text-xs text-center text-gray-500">
+            by {pinnedMessage.sender?.firstName}
+          </span>
+        </div>
+      )}
 
       <div className="max-w-4xl mx-auto px-4 pb-32">
         <div className="py-6 space-y-4">
@@ -522,7 +574,7 @@ export default function Conversation() {
               if (userId === message?.sender?.clerkId) {
                 return (
                   <div
-                    key={message.id}
+                    id={`msg-${message.id}`}
                     className="flex flex-row-reverse gap-3 group"
                   >
                     <div className="flex-1 min-w-0">
@@ -563,7 +615,8 @@ export default function Conversation() {
                           </div>
                         ) : (
                           <>
-                            {message.imageUrl === null && message.audioUrl === null && 
+                            {message.imageUrl === null &&
+                              message.audioUrl === null &&
                               !conversationInfo?.pairKey?.startsWith("ai") &&
                               !message?.content?.startsWith("@AI") && (
                                 <button
@@ -637,11 +690,36 @@ export default function Conversation() {
                               Edit
                             </button>
                             <button
-                              onClick={() => handleDelete(message.id)}
+                              onClick={() => {
+                                handleDelete(message.id);
+                                setOpenMenuId(null);
+                              }}
                               className="px-3 py-2 text-left hover:bg-gray-100 text-red-500"
                             >
                               Delete
                             </button>
+{pinnedMessage?.id === message.id ? (
+  <button
+    onClick={() => {
+      handleUnpinMessage(message.id);
+      setOpenMenuId(null);
+    }}
+    className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+  >
+    📌 Unpin
+  </button>
+) : (
+  <button
+    onClick={() => {
+      handlePinMessage(message.id);
+      setOpenMenuId(null);
+    }}
+    className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+  >
+    📌 Pin
+  </button>
+)}
+
                           </div>
                         )}
                       </div>
@@ -743,25 +821,25 @@ export default function Conversation() {
       </div>
       <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-purple-100">
         <div className="max-w-4xl px-4 py-4 flex items-end gap-3 md:mx-auto">
-        {
-          conversationInfo && !aiConversationPairKey?.startsWith("ai") && 
-          (<> 
-          {!recording ? (
-            <button
-              onClick={startRecording}
-              className="p-2 bg-purple-500 rounded-full text-white"
-            >
-              <Mic className="h-5 w-5" />
-            </button>
-          ) : (
-            <button
-              onClick={stopRecording}
-              className="p-2 bg-red-500 rounded-full text-white"
-            >
-              <Square className="h-5 w-5" />
-            </button>
+          {conversationInfo && !aiConversationPairKey?.startsWith("ai") && (
+            <>
+              {!recording ? (
+                <button
+                  onClick={startRecording}
+                  className="p-2 bg-purple-500 rounded-full text-white"
+                >
+                  <Mic className="h-5 w-5" />
+                </button>
+              ) : (
+                <button
+                  onClick={stopRecording}
+                  className="p-2 bg-red-500 rounded-full text-white"
+                >
+                  <Square className="h-5 w-5" />
+                </button>
+              )}
+            </>
           )}
-          </>)}
 
           {previewAudio ? (
             <AudioMessage
@@ -893,10 +971,7 @@ export default function Conversation() {
               ) : (
                 <Button
                   onClick={handleSend}
-                  disabled={
-                    (!text.trim() && !selectedImage) ||
-                    !connected
-                  }
+                  disabled={(!text.trim() && !selectedImage) || !connected}
                   size="icon"
                   className="h-12 w-16 cursor-pointer rounded-2xl bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300"
                 >

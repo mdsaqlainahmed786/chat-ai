@@ -203,32 +203,30 @@ export function useConversationSocket(conversationId?: string) {
     };
   }, [getToken, conversationId]);
 
+    const fetchPinnedMessage = async () => {
+      const token = await getToken({ template: "default" });
+      if (!token) {
+        console.warn("No token from Clerk");
+        return;
+      }
+      setToken(token);
+      try {
+        const baseUrl =
+          import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+        const res = await axios.get(`${baseUrl}/chat/pinned-message/${conversationId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.data?.pinnedMessage) {
+          setPinnedMessage(res.data.pinnedMessage);
+        } else {
+          setPinnedMessage(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch pinned message:", err);
+      }
+    };
 useEffect(() => {
 if (!conversationId) return;
-        
-  const fetchPinnedMessage = async () => {
-    const token = await getToken({ template: "default" });
-    if (!token) {
-      console.warn("No token from Clerk");
-      return;
-    }
-    setToken(token);
-    try {
-      const baseUrl =
-        import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
-      const res = await axios.get(`${baseUrl}/chat/pinned-message/${conversationId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.data?.pinnedMessage) {
-        setPinnedMessage(res.data.pinnedMessage);
-      } else {
-        setPinnedMessage(null);
-      }
-    } catch (err) {
-      console.error("Failed to fetch pinned message:", err);
-    }
-  };
-
   fetchPinnedMessage();
 }, [conversationId, token]);
   interface SendMessageResult {
@@ -367,5 +365,6 @@ if (!conversationId) return;
     audioBlob,
     sendAudioMessage,
     pinnedMessage,
+    fetchPinnedMessage
   };
 }

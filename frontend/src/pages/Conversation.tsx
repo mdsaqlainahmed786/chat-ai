@@ -81,6 +81,7 @@ export default function Conversation() {
     setPreviewAudio,
     setAudioBlob,
     pinnedMessage,
+    fetchPinnedMessage,
   } = useConversationSocket(conversationId);
   const [text, setText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -133,8 +134,6 @@ export default function Conversation() {
       cancelled = true;
     };
   }, [conversationId, getToken]);
-
-
 
   let headerName = "Chat Room";
   let headerAvatar: string | null = null;
@@ -206,9 +205,6 @@ export default function Conversation() {
       console.error("sendMessage failed:", err);
     }
   };
-
-
-
 
   const handleSend = async () => {
     if ((!text.trim() && !selectedImage) || !conversationId) return;
@@ -315,7 +311,7 @@ export default function Conversation() {
     if (!conversationId) return;
     try {
       const token = await getToken({ template: "default" });
-      console.log("token", token);
+      // console.log("token", token);
       if (!token) {
         console.warn("No token from Clerk");
         return;
@@ -332,8 +328,16 @@ export default function Conversation() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      if (res.data?.message) {
+        console.log("Message edited successfully");
+        fetchPinnedMessage(); // 👈 now it will run
+      } else {
+        console.warn("Failed to edit message:", res.data);
+      }
+
       if (res.data?.ok) {
         console.log("Message edited successfully");
+
         setEditMessageId(null);
         setEditContent("");
         setOpenMenuId(null);
@@ -357,6 +361,10 @@ export default function Conversation() {
         headers: { Authorization: `Bearer ${token}` },
         data: { messageId: id },
       });
+      if(res.data?.message) {
+        console.log("Message deleted successfully");
+        fetchPinnedMessage();
+      }
 
       if (res.data?.ok) {
         console.log("Message deleted successfully");
@@ -515,10 +523,10 @@ export default function Conversation() {
         <div
           onClick={() => {
             const msg = messages.find((m) => m.id === pinnedMessage.id);
-            console.log("Scrolling to pinned message:", msg);
+            // console.log("Scrolling to pinned message:", msg);
             if (msg) {
               const el = document.getElementById(`msg-${msg.id}`);
-              console.log("Found element:", el);
+              // console.log("Found element:", el);
               if (el) {
                 el.scrollIntoView({ behavior: "smooth", block: "center" });
               }
@@ -526,7 +534,10 @@ export default function Conversation() {
           }}
           className="cursor-pointer flex items-center gap-2 bg-yellow-100 border sticky top-16 z-10 border-yellow-300 rounded-md px-3 py-2 mt-2 text-sm text-gray-700"
         >
-          <span><PinIcon /></span>{pinnedMessage.content || "Pinned message"}
+          <span>
+            <PinIcon />
+          </span>
+          {pinnedMessage.content || "Pinned message"}
           <span className="ml-2 text-xs text-center text-gray-500">
             by {pinnedMessage.sender?.firstName}
           </span>
@@ -598,6 +609,7 @@ export default function Conversation() {
                               <button
                                 onClick={() => {
                                   handleEditMessage(message.id);
+                                  fetchPinnedMessage();
                                   setEditMessageId(null);
                                   setOpenMenuId(null);
                                 }}
@@ -692,34 +704,34 @@ export default function Conversation() {
                             <button
                               onClick={() => {
                                 handleDelete(message.id);
+
                                 setOpenMenuId(null);
                               }}
                               className="px-3 py-2 text-left hover:bg-gray-100 text-red-500"
                             >
                               Delete
                             </button>
-{pinnedMessage?.id === message.id ? (
-  <button
-    onClick={() => {
-      handleUnpinMessage(message.id);
-      setOpenMenuId(null);
-    }}
-    className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-  >
-    📌 Unpin
-  </button>
-) : (
-  <button
-    onClick={() => {
-      handlePinMessage(message.id);
-      setOpenMenuId(null);
-    }}
-    className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
-  >
-    📌 Pin
-  </button>
-)}
-
+                            {pinnedMessage?.id === message.id ? (
+                              <button
+                                onClick={() => {
+                                  handleUnpinMessage(message.id);
+                                  setOpenMenuId(null);
+                                }}
+                                className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+                              >
+                                📌 Unpin
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  handlePinMessage(message.id);
+                                  setOpenMenuId(null);
+                                }}
+                                className="block px-4 py-2 hover:bg-gray-100 w-full text-left"
+                              >
+                                📌 Pin
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
@@ -730,7 +742,7 @@ export default function Conversation() {
                 return (
                   <div
                     className="flex justify-start gap-1 group"
-                    key={message.id}
+                    id={`msg-${message.id}`}
                   >
                     {conversationInfo?.isGroup && !message.isAi && (
                       <Avatar className="w-6 h-6 border border-purple-200">

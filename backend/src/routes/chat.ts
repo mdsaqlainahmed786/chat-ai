@@ -187,7 +187,7 @@ chatRouter.put("/edit-message", async (req: Request, res: Response) => {
     if (!messageId || !newContent) return res.status(400).json({ error: "messageId and newContent are required" });
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) return res.status(400).json({ error: "User not found in DB" });
-    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    const message = await prisma.message.findUnique({ where: { id: messageId }, include: { sender: true } });
     if (!message) return res.status(404).json({ error: "Message not found" });
     if (message.senderId !== user.id) return res.status(403).json({ error: "You can only edit your own messages" });
     const updatedMessage = await prisma.message.update({
@@ -510,7 +510,7 @@ chatRouter.delete("/delete-message", async (req: Request, res: Response) => {
     if (!messageId) return res.status(400).json({ error: "messageId is required" });
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) return res.status(400).json({ error: "User not found in DB" });
-    const message = await prisma.message.findUnique({ where: { id: messageId } });
+    const message = await prisma.message.findUnique({ where: { id: messageId }, include: { sender: true } });
     if (!message) return res.status(404).json({ error: "Message not found" });
     if (message.senderId !== user.id) return res.status(403).json({ error: "You can only delete your own messages" });
     await prisma.message.delete({ where: { id: messageId } });

@@ -96,6 +96,7 @@ export default function Conversation() {
     setAudioBlob,
     pinnedMessage,
     fetchPinnedMessage,
+    uploadingRecording
   } = useConversationSocket(conversationId);
 
   const [text, setText] = useState("");
@@ -861,6 +862,7 @@ export default function Conversation() {
                     src={previewAudio}
                     preview
                     onSend={sendAudioMessage}
+                    sending={uploadingRecording}
                     onCancel={() => {
                       setPreviewAudio(null);
                       setAudioBlob(null);

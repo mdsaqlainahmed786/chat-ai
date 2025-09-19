@@ -5,11 +5,12 @@ import { Button } from "./ui/button";
 interface AudioMessageProps {
   src: string;
   preview?: boolean;
+  sending?: boolean;
   onSend?: () => void;
   onCancel?: () => void;
 }
 
-export default function AudioMessage({ src, preview, onSend, onCancel }: AudioMessageProps) {
+export default function AudioMessage({ src, preview, onSend, onCancel, sending }: AudioMessageProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -92,7 +93,7 @@ export default function AudioMessage({ src, preview, onSend, onCancel }: AudioMe
               <Button
                   onClick={onSend}
                   disabled={
-                    !onSend
+                    !onSend || sending
                   }
                   size="icon"
                   className="h-12 w-16 cursor-pointer rounded-2xl bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-lg hover:shadow-xl transition-all duration-300"

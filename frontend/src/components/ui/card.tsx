@@ -38,6 +38,16 @@ function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+function CardIcon ({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-icon"
+      className={cn("text-muted-foreground", className)}
+      {...props}
+    />
+  )
+}
+
 function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
@@ -86,6 +96,7 @@ export {
   CardHeader,
   CardFooter,
   CardTitle,
+  CardIcon,
   CardAction,
   CardDescription,
   CardContent,

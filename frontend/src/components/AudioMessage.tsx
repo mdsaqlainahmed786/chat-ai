@@ -1,4 +1,4 @@
-import { Play, Pause, Volume2, X, Send } from "lucide-react";
+import { Play, Pause,  X, Send } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/button";
 
@@ -72,7 +72,7 @@ export default function AudioMessage({ src, preview, onSend, onCancel }: AudioMe
             <span>{duration}</span>
           </div>
         </div>
-        <Volume2 size={18} className="text-gray-500" />
+        {/* <Volume2 size={18} className="text-gray-500" /> */}
         <audio
           ref={audioRef}
           src={src}

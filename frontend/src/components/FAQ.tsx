@@ -21,11 +21,6 @@ const FAQ = () => {
         "Absolutely. We use bank-level encryption for all conversations and never store personal chat data permanently. Our AI processes conversations in real-time without retaining sensitive information. We're fully compliant with GDPR, SOC 2, and other major privacy standards.",
     },
     {
-      question: "What are the different membership tiers?",
-      answer:
-        "We offer three tiers: Basic (essential AI features for small teams), Standard (advanced features with priority support), and Premium (enterprise-grade with unlimited AI requests, analytics, and custom integrations). Pricing will be announced soon with early-bird discounts for beta users.",
-    },
-    {
       question: "Can I use ChatAI with my existing team tools?",
       answer:
         "Yes! ChatAI integrates seamlessly with popular platforms like Slack, Microsoft Teams, Discord, and more. You can also use our standalone app or web interface. API access is available for custom integrations with Premium plans.",
@@ -34,11 +29,6 @@ const FAQ = () => {
       question: "How accurate are the AI responses?",
       answer:
         "Our Gemini 2.0 integration maintains a 95%+ accuracy rate for contextually relevant responses. The AI continuously learns from interactions (while maintaining privacy) and improves its understanding of your team's communication patterns and needs.",
-    },
-    {
-      question: "Is there a free trial available?",
-      answer:
-        "Yes! We offer a 14-day free trial with full access to all Basic tier features. No credit card required to start. You can invite your team and experience the full power of AI-enhanced conversations before committing to a paid plan.",
     },
     {
       question: "What languages does the AI support?",

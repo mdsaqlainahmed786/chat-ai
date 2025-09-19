@@ -443,7 +443,7 @@ export default function Conversation() {
                       <Avatar className="w-10 h-10 border-2 border-purple-200">
                         {conversationInfo?.title === "AI-Assistant" &&
                         !conversationInfo.isGroup ? (
-                          <AiConversationAvatar />
+                          <AiConversationAvatar  className="pb-4"/>
                         ) : headerAvatar ? (
                           <AvatarImage src={headerAvatar} alt={headerName} />
                         ) : (

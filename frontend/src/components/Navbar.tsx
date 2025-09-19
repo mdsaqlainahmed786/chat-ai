@@ -12,7 +12,6 @@ const Navbar = () => {
     <nav className="fixed top-0 w-full z-50 bg-white/40 backdrop-blur-md border-b border-white/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
 
           <div
               onClick={() => navigate("/")}
@@ -21,8 +20,6 @@ const Navbar = () => {
             <MessageCircle className="h-8 w-8 text-purple-600 mr-2" />
             <span className="text-xl font-semibold text-gray-900">Chat AI</span>
           </div>
-
-          {/* Desktop Navigation */}
           <SignedOut>
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-8">
@@ -53,8 +50,6 @@ const Navbar = () => {
               </div>
             </div>
           </SignedOut>
-
-          {/* Desktop CTA */}
           <div className="hidden md:block">
             <div className="ml-4 flex items-center space-x-4">
               <SignedOut>
@@ -85,8 +80,7 @@ const Navbar = () => {
               </SignedIn>
             </div>
           </div>
-
-          {/* Mobile menu button */}
+          <SignedOut>
           <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -95,10 +89,18 @@ const Navbar = () => {
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
+          </SignedOut>
+             <SignedIn>
+            <div className="md:hidden">
+              <div className="px-2 pt-2 space-y-1 bg-white/90 backdrop-blur-md rounded-lg">
+                <UserButton afterSignOutUrl="/signin" />
+              </div>
+            </div>
+          </SignedIn>
         </div>
-
-        {/* Mobile Navigation */}
         {isMenuOpen && (
+          <>
+          <SignedOut>
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white/90 backdrop-blur-md rounded-lg mt-2">
               <a
@@ -144,7 +146,10 @@ const Navbar = () => {
               </div>
             </div>
           </div>
+          </SignedOut>
+        </>
         )}
+       
       </div>
     </nav>
   );

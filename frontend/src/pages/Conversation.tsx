@@ -472,7 +472,7 @@ export default function Conversation() {
                         </p>
                       ) : conversationInfo?.isGroup ? (
                         <p className="text-xs sm:text-sm text-gray-500">
-                          {conversationInfo.participants.length} members
+                          {conversationInfo.participants.map((p) => p.user.firstName).join(", ")}
                         </p>
                       ) : null}
                     </div>

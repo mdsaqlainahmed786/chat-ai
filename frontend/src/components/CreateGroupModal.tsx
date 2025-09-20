@@ -46,7 +46,7 @@ export const CreateGroupModal = ({
         `${baseUrl}/chat/create-group`,
         {
           title: groupTitle,
-          participantIds: selectedUsers,
+          ExistingMemberClerkIds: selectedUsers,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );

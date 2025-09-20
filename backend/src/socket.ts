@@ -2,6 +2,8 @@ import http from "http";
 import { Server as IOServer } from "socket.io";
 import { verifyToken } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
+import { activeUsersGauge } from "./metrics";
+import { Gauge } from "prom-client";
 
 const prisma = new PrismaClient();
 
@@ -61,6 +63,7 @@ export function initSocketServer(server: http.Server) {
     const clerkId = socket.data.clerkId as string | undefined;
     console.log(`socket connected ${socket.id} clerkId=${clerkId}`);
     onlineUsers.add(clerkId!);
+      activeUsersGauge.set(onlineUsers.size);
     socket.emit("onlineUsers", Array.from(onlineUsers));
     socket.broadcast.emit("userOnline", { clerkId });
     io.emit("userOnline", { clerkId });
@@ -204,6 +207,7 @@ export function initSocketServer(server: http.Server) {
       console.log(`socket disconnected ${socket.id} reason=${reason}`);
       io.emit("userOffline", { clerkId });
       onlineUsers.delete(clerkId!);
+      activeUsersGauge.set(onlineUsers.size); 
       socket.broadcast.emit("userOffline", { clerkId });
     });
   });

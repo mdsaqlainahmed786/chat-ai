@@ -74,7 +74,7 @@ const FeatureDescription = ({ children }: { children?: React.ReactNode }) => {
 export const SkeletonFour = () => {
   return (
     <div className="h-60 md:h-80  flex flex-row items-center  justify-between relative bg-transparent dark:bg-transparent mt-10">
-      <Globe className="absolute md:mr-0 -right-10 md:-right-10 -bottom-70 md:bottom-32" />
+      <Globe className="absolute md:mr-0 -right-10 md:-right-10 -bottom-70 md:bottom-30" />
     </div>
   );
 };

@@ -3,8 +3,11 @@ import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
 import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const Hero = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500/20 to-white overflow-hidden">
       {/* Background Image */}
@@ -50,7 +53,7 @@ const Hero = () => {
               @AI
             </span>{" "}
             in any conversation and watch as Gemini 2.0 instantly provides
-            intelligent responses that both participants can see in real-time.
+            intelligent responses that participants can see in real-time.
           </p>
 
           {/* CTA Buttons */}
@@ -60,8 +63,11 @@ const Hero = () => {
   bg-gradient-to-r from-purple-500 to-purple-700 
   shadow-md hover:shadow-lg transition-transform duration-300 
   hover:scale-105 active:scale-95 flex items-center gap-2"
+              onClick={() => {
+                navigate("/chats");
+              }}        
             >
-              Start Free Trial {<ArrowRight className="w-4 h-4" />}
+              Start To Chat {<ArrowRight className="w-4 h-4" />}
             </button>
 
             <Button
@@ -70,7 +76,9 @@ const Hero = () => {
               className="text-lg text-purple-700 px-8 py-6 border border-purple-600/20 bg-white/10 backdrop-blur-md hover:bg-white/20 hover:border-purple-300 flex items-center gap-2"
             >
               <MessageCircle className="mr-2 w-5 h-5" />
-              See Demo
+              <a href="#power" target="_blank" rel="noopener noreferrer">
+                See Demo
+              </a>
             </Button>
           </div>
 

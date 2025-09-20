@@ -45,7 +45,7 @@ const GeminiPower = () => {
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
             The Most Advanced AI
-            <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent block">
+            <span className="bg-gradient-to-r pb-2 from-purple-400 to-purple-600 bg-clip-text text-transparent block">
               At Your Fingertips
             </span>
           </h2>

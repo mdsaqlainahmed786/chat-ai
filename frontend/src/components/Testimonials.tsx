@@ -7,14 +7,14 @@ const testimonials = [
     rating: 5,
     review:
         "ChatAI has revolutionized how our team collaborates. The @AI feature gives us instant insights that would take hours to research manually.",
-    name: "Charles Dickens",
+    name: "Mark Twain",
     image:"https://i.pravatar.cc/150?img=1"
   },
   {
     rating: 5,
     review:
         "The real-time AI responses are incredibly accurate. It's like having a senior expert in every conversation helping solve complex problems.",
-    name: "William Shakespeare",
+    name: "Robert Frost",
     image:"https://i.pravatar.cc/150?img=2"
   },
   {
@@ -28,21 +28,21 @@ const testimonials = [
     rating: 5,
     review:
         "As a small team, having AI assistance in our daily conversations is like adding a world-class consultant to every discussion.",
-    name: "Jane Austen",
+    name: "William Faulkner",
     image:"https://i.pravatar.cc/150?img=4"
   },
   {
     rating: 5,
     review:
         "The multi-language support is phenomenal. Our global team can now communicate seamlessly with AI helping bridge any gaps.",
-    name: "Herman Melville",
+    name: "James Herriot",
     image:"https://i.pravatar.cc/150?img=5"
   },
   {
     rating: 5,
     review:
         "ChatAI sparks creativity in ways I never expected. The AI suggestions often lead us to breakthrough ideas we wouldn't have found alone.",
-    name: "Herman Melville",
+    name: "Sarah Connor",
     image:"https://i.pravatar.cc/150?img=6"
   },
 ];

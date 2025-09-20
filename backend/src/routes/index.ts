@@ -3,13 +3,15 @@ dotenv.config();
 import { clerkMiddleware } from "@clerk/express";
 import express from "express";
 import http from "http";
+import client from 'prom-client';
 import cors from "cors";
 import { initSocketServer } from "../socket";
 import { authRouter } from "./auth";
 import { chatRouter } from "./chat";
 import { aiMessagesRouter } from "./aiMessages";
-import { register } from "../metrics";
-import { metricsMiddleware } from "../metricsMiddleware";
+import { register } from "prom-client";
+import { requestCounter, getActiveGauge, httpDurationMiddleware, onlineUsersGauge, httpDuringMilliSeconds } from "../monitoring/requestCounter";
+// import { metricsMiddleware } from "../metricsMiddleware";
 
 const app = express();
 
@@ -21,13 +23,16 @@ app.use(
     exposedHeaders: ["Authorization"],
   })
 );
+app.use(requestCounter);
+app.use(getActiveGauge);
+app.use(httpDurationMiddleware);
+register.registerMetric(httpDuringMilliSeconds);
+register.registerMetric(onlineUsersGauge);    
+app.use(express.json());
 app.get("/metrics", async (req, res) => {
   res.set("Content-Type", register.contentType);
   res.end(await register.metrics());
 });
-app.use(metricsMiddleware);
-
-app.use(express.json());
 app.use(
   clerkMiddleware({
     authorizedParties: undefined,

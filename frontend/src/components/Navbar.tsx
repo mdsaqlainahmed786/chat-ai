@@ -1,10 +1,6 @@
 import { Button } from "@/components/ui/button";
-import {
-  SignedIn,
-  SignedOut,
-  UserButton,
-} from "@clerk/clerk-react";
-import { Menu, X } from "lucide-react";
+import { SignedIn, SignedOut, UserButton } from "@clerk/clerk-react";
+import { Menu, MessageCircle, X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -13,67 +9,59 @@ const Navbar = () => {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-white/20">
+    <nav className="fixed top-0 w-full z-50 bg-white/40 backdrop-blur-md border-b border-white/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+
           <div
-            onClick={() => navigate("/")}
-            className="flex items-center cursor-pointer"
+              onClick={() => navigate("/")}
+              className="flex items-center cursor-pointer"
           >
-            <div className="flex-shrink-0">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent">
-                ChatAI
-              </h1>
-            </div>
+            <MessageCircle className="h-8 w-8 text-purple-600 mr-2" />
+            <span className="text-xl font-semibold text-gray-900">Chat AI</span>
           </div>
-
-          {/* Desktop Navigation */}
-              <SignedOut>
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
-              <a
-                href="#features"
-                className="text-gray-900 hover:text-purple-500 transition-colors"
-              >
-                Features
-              </a>
-              <a
-                href="#power"
-                className="text-gray-900 hover:text-purple-500 transition-colors"
-              >
-                AI Power
-              </a>
-              <a
-                href="#testimonials"
-                className="text-gray-900 hover:text-purple-500 transition-colors"
-              >
-                Testimonials
-              </a>
-              <a
-                href="#faq"
-                className="text-gray-900 hover:text-purple-500 transition-colors"
-              >
-                FAQ
-              </a>
+          <SignedOut>
+            <div className="hidden md:block">
+              <div className="ml-10 flex items-baseline space-x-8">
+                <a
+                  href="#features"
+                  className="text-gray-900 hover:text-purple-500 transition-colors"
+                >
+                  Features
+                </a>
+                <a
+                  href="#power"
+                  className="text-gray-900 hover:text-purple-500 transition-colors"
+                >
+                  AI Power
+                </a>
+                <a
+                  href="#testimonials"
+                  className="text-gray-900 hover:text-purple-500 transition-colors"
+                >
+                  Testimonials
+                </a>
+                <a
+                  href="#faq"
+                  className="text-gray-900 hover:text-purple-500 transition-colors"
+                >
+                  FAQ
+                </a>
+              </div>
             </div>
-          </div>
           </SignedOut>
-
-          {/* Desktop CTA */}
           <div className="hidden md:block">
             <div className="ml-4 flex items-center space-x-4">
               <SignedOut>
                 <div className="flex items-center gap-3">
-                 
-                    <Button
-                      variant="ghost"
-                      onClick={() => navigate("/signin")}
-                      className="text-gray-900 hover:text-purple-500"
-                    >
-                      Sign In
-                    </Button>
-                 
+                  <Button
+                    variant="ghost"
+                    onClick={() => navigate("/signin")}
+                    className="text-gray-900 hover:text-purple-500"
+                  >
+                    Sign In
+                  </Button>
+
                   <button
                     onClick={() => navigate("/signup")}
                     className="px-4 text-sm py-2 rounded-xl font-semibold text-white 
@@ -92,8 +80,7 @@ const Navbar = () => {
               </SignedIn>
             </div>
           </div>
-
-          {/* Mobile menu button */}
+          <SignedOut>
           <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -102,10 +89,18 @@ const Navbar = () => {
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
+          </SignedOut>
+             <SignedIn>
+            <div className="md:hidden">
+              <div className="px-2 pt-2 space-y-1 bg-white/90 backdrop-blur-md rounded-lg">
+                <UserButton afterSignOutUrl="/signin" />
+              </div>
+            </div>
+          </SignedIn>
         </div>
-
-        {/* Mobile Navigation */}
         {isMenuOpen && (
+          <>
+          <SignedOut>
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 bg-white/90 backdrop-blur-md rounded-lg mt-2">
               <a
@@ -141,7 +136,7 @@ const Navbar = () => {
                 >
                   Sign In
                 </Button>
-                <button 
+                <button
                   onClick={() => navigate("/signup")}
                   className="px-2 mx-3 mb-2 cursor-pointer text-xs py-2 rounded-lg font-semibold text-white bg-gradient-to-r from-purple-500 to-purple-700 shadow-md hover:shadow-lg transition-transform duration-300 hover:scale-105 active:scale-95 flex items-center gap-2"
                 >
@@ -151,7 +146,10 @@ const Navbar = () => {
               </div>
             </div>
           </div>
+          </SignedOut>
+        </>
         )}
+       
       </div>
     </nav>
   );

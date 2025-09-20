@@ -1,63 +1,51 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Star, Quote } from "lucide-react";
+import { InfiniteMovingCards } from "@/components/ui/infinite-moving-cards";
 
 const Testimonials: React.FC = () => {
-  const testimonials = [
-    {
-      name: "Sarah Chen",
-      role: "Product Manager",
-      company: "TechFlow Inc.",
-      content:
+const testimonials = [
+  {
+    rating: 5,
+    review:
         "ChatAI has revolutionized how our team collaborates. The @AI feature gives us instant insights that would take hours to research manually.",
-      rating: 5,
-      avatar: "SC",
-    },
-    {
-      name: "Michael Rodriguez",
-      role: "Engineering Lead",
-      company: "DataStream",
-      content:
+    name: "Charles Dickens",
+    image:"https://i.pravatar.cc/150?img=1"
+  },
+  {
+    rating: 5,
+    review:
         "The real-time AI responses are incredibly accurate. It's like having a senior expert in every conversation helping solve complex problems.",
-      rating: 5,
-      avatar: "MR",
-    },
-    {
-      name: "Emily Watson",
-      role: "Marketing Director",
-      company: "GrowthLab",
-      content:
-        "Our team productivity increased by 40% since using ChatAI. The AI understands context perfectly and provides relevant suggestions.",
-      rating: 5,
-      avatar: "EW",
-    },
-    {
-      name: "David Kim",
-      role: "Startup Founder",
-      company: "InnovateCo",
-      content:
+    name: "William Shakespeare",
+    image:"https://i.pravatar.cc/150?img=2"
+  },
+  {
+    rating: 5,
+    review:
+    "Our team productivity increased by 40% since using ChatAI. The AI understands context perfectly and provides relevant suggestions.",
+    name: "Edgar Allan Poe",
+    image:"https://i.pravatar.cc/150?img=3"
+  },
+  {
+    rating: 5,
+    review:
         "As a small team, having AI assistance in our daily conversations is like adding a world-class consultant to every discussion.",
-      rating: 5,
-      avatar: "DK",
-    },
-    {
-      name: "Lisa Thompson",
-      role: "Operations Manager",
-      company: "ScaleUp Solutions",
-      content:
+    name: "Jane Austen",
+    image:"https://i.pravatar.cc/150?img=4"
+  },
+  {
+    rating: 5,
+    review:
         "The multi-language support is phenomenal. Our global team can now communicate seamlessly with AI helping bridge any gaps.",
-      rating: 5,
-      avatar: "LT",
-    },
-    {
-      name: "Alex Foster",
-      role: "Creative Director",
-      company: "DesignStudio",
-      content:
+    name: "Herman Melville",
+    image:"https://i.pravatar.cc/150?img=5"
+  },
+  {
+    rating: 5,
+    review:
         "ChatAI sparks creativity in ways I never expected. The AI suggestions often lead us to breakthrough ideas we wouldn't have found alone.",
-      rating: 5,
-      avatar: "AF",
-    },
-  ];
+    name: "Herman Melville",
+    image:"https://i.pravatar.cc/150?img=6"
+  },
+];
 
   // -----------------------
   // Inline CountUp component
@@ -173,13 +161,10 @@ const Testimonials: React.FC = () => {
     );
   };
 
-  // -----------------------
-  // Testimonials JSX
-  // -----------------------
   return (
     <section
       id="testimonials"
-      className="py-24 bg-gradient-to-b from-white to-purple-50"
+      className="pt-14 pb-24 bg-gradient-to-b from-white to-purple-50"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
@@ -201,18 +186,18 @@ const Testimonials: React.FC = () => {
         </div>
 
         {/* Testimonials Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
               className="group relative p-8 bg-gradient-to-br from-white to-purple-50 rounded-2xl border border-white/20 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
             >
-              {/* Quote Icon */}
+              
               <div className="absolute top-6 right-6 opacity-10 group-hover:opacity-20 transition-opacity">
-                <Quote className="w-8 h-8 text-purple-500" />
+                <review className="w-8 h-8 text-purple-500" />
               </div>
 
-              {/* Rating */}
+              
               <div className="flex items-center space-x-1 mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (
                   <Star
@@ -222,12 +207,12 @@ const Testimonials: React.FC = () => {
                 ))}
               </div>
 
-              {/* Content */}
+            
               <p className="text-gray-600 mb-6 leading-relaxed">
                 "{testimonial.content}"
               </p>
 
-              {/* Author */}
+            
               <div className="flex items-center space-x-4">
                 <div className="w-12 h-12 bg-purple-200 rounded-full flex items-center justify-center">
                   <span className="text-purple-700 font-semibold text-sm">
@@ -245,7 +230,15 @@ const Testimonials: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
+
+         <div className="h-[20rem] rounded-md flex flex-col antialiased bg-white dark:bg-black dark:bg-grid-white/[0.05] items-center justify-center relative overflow-hidden">
+      <InfiniteMovingCards
+        items={testimonials}
+        direction="right"
+        speed="slow"
+      />
+    </div>
 
         {/* Stats Section with in-file CountUp */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pt-16 border-t border-purple-200">

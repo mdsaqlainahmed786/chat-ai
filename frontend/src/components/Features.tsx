@@ -1,36 +1,37 @@
 import { MessageSquare, Users, Zap, Shield, Globe, Brain } from "lucide-react";
+import { HoverEffect } from "@/components/ui/card-hover-effect";
 
 const Features = () => {
   const features = [
     {
-      icon: MessageSquare,
+      icon: <MessageSquare className="w-6 h-6 text-purple-500" />,
       title: "Real-Time AI Integration",
-      description: "Simply type @AI and get instant intelligent responses visible to all chat participants."
+      description: "Simply type @AI and get instant intelligent responses visible to all chat participants.",
     },
     {
-      icon: Users,
+      icon: <Users className="w-6 h-6 text-purple-500"/>,
       title: "Collaborative Intelligence",
-      description: "Both users see AI responses in real-time, creating a shared intelligent conversation experience."
+      description: "Both users see AI responses in real-time, creating a shared intelligent conversation experience.",
     },
     {
-      icon: Zap,
+      icon: <Zap className="w-6 h-6 text-purple-500"/>,
       title: "Lightning Fast Responses",
-      description: "Powered by Gemini 2.0 for instant, contextually aware responses that keep conversations flowing."
+      description: "Powered by Gemini 2.0 for instant, contextually aware responses that keep conversations flowing.",
     },
     {
-      icon: Shield,
+      icon: <Shield className="w-6 h-6 text-purple-500"/>,
       title: "Enterprise Security",
-      description: "Bank-level encryption and privacy protection for all your sensitive conversations."
+      description: "Bank-level encryption and privacy protection for all your sensitive conversations.",
     },
     {
-      icon: Globe,
+      icon: <Globe className="w-6 h-6 text-purple-500"/>,
       title: "Multi-Language Support",
-      description: "Communicate in over 100 languages with AI that understands context and nuance."
+      description: "Communicate in over 100 languages with AI that understands context and nuance.",
     },
     {
-      icon: Brain,
+      icon: <Brain className="w-6 h-6 text-purple-500"/>,
       title: "Contextual Understanding",
-      description: "AI remembers conversation history and provides relevant, intelligent responses."
+      description: "AI remembers conversation history and provides relevant, intelligent responses.",
     }
   ];
 
@@ -53,7 +54,7 @@ const Features = () => {
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
             <div
               key={index}
@@ -70,7 +71,9 @@ const Features = () => {
               </p>
             </div>
           ))}
-        </div>
+        </div> */}
+         <HoverEffect items={features} />
+        
 
         {/* Bottom CTA */}
         <div className="text-center mt-16">

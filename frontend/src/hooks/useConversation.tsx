@@ -27,6 +27,7 @@ export function useConversationSocket(conversationId?: string) {
   const socketRef = useRef<Socket | null>(null);
   const [aiStreaming, setAiStreaming] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [uploadingRecording, setUploadingRecording] = useState(false);
   const [previewAudio, setPreviewAudio] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
@@ -324,7 +325,7 @@ if (!conversationId) return;
       const formData = new FormData();
       formData.append("audio", audioBlob, "recording.webm");
       formData.append("conversationId", conversationId);
-
+      setUploadingRecording(true);
       const res = await fetch(
         `${import.meta.env.VITE_SOCKET_URL}/chat/upload-audio`,
         {
@@ -341,10 +342,12 @@ if (!conversationId) return;
       console.log("Audio uploaded:", data);
       setPreviewAudio(null);
       setAudioBlob(null);
+      setUploadingRecording(false);
     } catch (err) {
       console.error("Error uploading audio:", err);
     } finally {
       setRecording(false);
+      setUploadingRecording(false);
     }
   };
 
@@ -358,6 +361,7 @@ if (!conversationId) return;
     emitTyping,
     recording,
     startRecording,
+    uploadingRecording,
     stopRecording,
     previewAudio,
     setPreviewAudio,

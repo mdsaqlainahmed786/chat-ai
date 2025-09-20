@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MessageCircle, Sparkles } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
+import { LayoutTextFlip } from "@/components/ui/layout-text-flip";
+import { motion } from "framer-motion";
 
 const Hero = () => {
   return (
@@ -10,7 +12,7 @@ const Hero = () => {
         <img
           src={heroImage}
           alt="AI Chat Interface"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover scale-125"
         />
       </div>
 
@@ -29,17 +31,20 @@ const Hero = () => {
             <span className="text-sm font-medium">Powered by Gemini 2.0</span>
           </div>
 
-          {/* Main Headline */}
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6 leading-tight">
-            Transform Your
-            <span className="bg-gradient-to-r from-purple-500 to-purple-700 bg-clip-text text-transparent block">
-              Team Chat
-            </span>
-            with AI Magic
-          </h1>
+          <motion.div className="relative mx-4 my-4 flex flex-col items-center justify-center gap-4 text-center sm:mx-0 sm:mb-0 sm:flex-row">
+            <LayoutTextFlip
+              text="Transform Your Team Chat "
+              words={[
+                "With AI Magic",
+                "With AI Power",
+                "With Gemini 2.0",
+                "With Smart Responses",
+              ]}
+            />
+          </motion.div>
 
           {/* Subheadline */}
-          <p className="text-xl md:text-2xl text-gray-600 mb-8 leading-relaxed max-w-3xl mx-auto">
+          <p className="text-xl md:text-2xl text-gray-600 mb-8 pt-7 leading-relaxed max-w-3xl mx-auto">
             Simply type{" "}
             <span className="font-mono bg-purple-100 px-2 py-1 rounded text-purple-700">
               @AI
@@ -59,7 +64,11 @@ const Hero = () => {
               Start Free Trial {<ArrowRight className="w-4 h-4" />}
             </button>
 
-            <Button variant="premium" size="lg" className="text-lg text-purple-700 px-8 py-6 border border-purple-600/20 bg-white/10 backdrop-blur-md hover:bg-white/20 hover:border-purple-300 flex items-center gap-2">
+            <Button
+              variant="premium"
+              size="lg"
+              className="text-lg text-purple-700 px-8 py-6 border border-purple-600/20 bg-white/10 backdrop-blur-md hover:bg-white/20 hover:border-purple-300 flex items-center gap-2"
+            >
               <MessageCircle className="mr-2 w-5 h-5" />
               See Demo
             </Button>

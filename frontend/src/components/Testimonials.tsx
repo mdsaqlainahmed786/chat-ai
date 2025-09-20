@@ -35,14 +35,14 @@ const testimonials = [
     rating: 5,
     review:
         "The multi-language support is phenomenal. Our global team can now communicate seamlessly with AI helping bridge any gaps.",
-    name: "James Herriot",
+    name: "Sarah Kay",
     image:"https://i.pravatar.cc/150?img=5"
   },
   {
     rating: 5,
     review:
         "ChatAI sparks creativity in ways I never expected. The AI suggestions often lead us to breakthrough ideas we wouldn't have found alone.",
-    name: "Sarah Connor",
+    name: "James Herriot",
     image:"https://i.pravatar.cc/150?img=6"
   },
 ];

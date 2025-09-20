@@ -97,7 +97,7 @@ export default function ChatsPage() {
     for (const conv of conversations) {
       if (conv.isGroup) continue;
       const other = conv.participants.find((p) => p.user.id !== dbUser.id);
-      if (other && !map.has(other.user.clerkId)) {
+      if (other && !map.has(other.user.clerkId) && other.user.clerkId !== "ai_bot") {
         map.set(other.user.clerkId, other.user);
       }
     }

@@ -59,7 +59,7 @@ chatRouter.post("/invite", async (req: Request, res: Response) => {
       data: { inviteLink },
     });
 
-    return res.json({
+    return res.status(200).json({
       invite: {
         url: inviteLink
       },
@@ -168,7 +168,7 @@ chatRouter.get("/conversations", async (req: Request, res: Response) => {
       },
       select: { pairKey: true, id: true },
     });
-    return res.json({ conversations, conversationPairKeys });
+    return res.status(200).json({ conversations, conversationPairKeys });
   } catch (err: any) {
     console.error("ERROR /chat/conversations:", err);
     return res.status(500).json({ error: "Server error" });
@@ -313,7 +313,7 @@ chatRouter.post("/create-group", async (req: Request, res: Response) => {
       });
     });
     
-    return res.json({ conversation: created });
+    return res.status(200).json({ conversation: created });
   } catch (err: any) {
     console.error("ERROR /chat/create-group:", err);
     return res.status(500).json({ error: "Server error" });

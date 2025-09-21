@@ -2,8 +2,11 @@ import http from "http";
 import { Server as IOServer } from "socket.io";
 import { verifyToken } from "@clerk/backend";
 import { PrismaClient } from "@prisma/client";
+import { Gauge } from "prom-client";
+import { setOnlineUsers } from "./monitoring/requestCounter"; // adjust path
 
 const prisma = new PrismaClient();
+const onlineUsers = new Set<string>();
 
 export function initSocketServer(server: http.Server) {
   const io = new IOServer(server, {
@@ -61,6 +64,11 @@ export function initSocketServer(server: http.Server) {
     const clerkId = socket.data.clerkId as string | undefined;
     console.log(`socket connected ${socket.id} clerkId=${clerkId}`);
     onlineUsers.add(clerkId!);
+     if (clerkId) {
+    setOnlineUsers(onlineUsers.size); // update gauge
+  }
+
+    // activeUsersGauge.set(onlineUsers.size);
     socket.emit("onlineUsers", Array.from(onlineUsers));
     socket.broadcast.emit("userOnline", { clerkId });
     io.emit("userOnline", { clerkId });
@@ -118,24 +126,24 @@ export function initSocketServer(server: http.Server) {
       }
     });
     socket.on("pinMessage", async ({ conversationId, messageId }) => {
-    const updated = await prisma.conversation.update({
-      where: { id: conversationId },
-      data: { pinnedMessageId: messageId },
-      include: { pinnedMessage: { include: { sender: true } } },
+      const updated = await prisma.conversation.update({
+        where: { id: conversationId },
+        data: { pinnedMessageId: messageId },
+        include: { pinnedMessage: { include: { sender: true } } },
+      });
+      io.to(conversationId).emit("messagePinned", {
+        conversationId,
+        pinnedMessage: updated.pinnedMessage,
+      });
     });
-    io.to(conversationId).emit("messagePinned", {
-      conversationId,
-      pinnedMessage: updated.pinnedMessage,
-    });
-  });
 
-  socket.on("unpinMessage", async ({ conversationId }) => {
-    await prisma.conversation.update({
-      where: { id: conversationId },
-      data: { pinnedMessageId: null },
+    socket.on("unpinMessage", async ({ conversationId }) => {
+      await prisma.conversation.update({
+        where: { id: conversationId },
+        data: { pinnedMessageId: null },
+      });
+      io.to(conversationId).emit("messageUnpinned", { conversationId });
     });
-    io.to(conversationId).emit("messageUnpinned", { conversationId });
-  });
 
     // Typing events now emit clerkId
     socket.on("typing", ({ conversationId }) => {
@@ -159,14 +167,14 @@ export function initSocketServer(server: http.Server) {
         if (!clerkId) return ack?.({ ok: false, error: "not authenticated" });
 
         const sender = await prisma.user.findUnique({ where: { clerkId } });
-          if (!sender) return ack?.({ ok: false, error: "user not found" });
+        if (!sender) return ack?.({ ok: false, error: "user not found" });
 
-          const participant = await prisma.conversationParticipant.findUnique({
-            where: {
-              userId_conversationId: { userId: sender.id, conversationId },
-            },
-          });
-          if (!participant) return ack?.({ ok: false, error: "not a participant" });
+        const participant = await prisma.conversationParticipant.findUnique({
+          where: {
+            userId_conversationId: { userId: sender.id, conversationId },
+          },
+        });
+        if (!participant) return ack?.({ ok: false, error: "not a participant" });
 
         const message = await prisma.message.create({
           data: {
@@ -174,7 +182,7 @@ export function initSocketServer(server: http.Server) {
             senderId: sender.id,
             content: content ?? null,
             imageUrl: imageUrl ?? null,
-            audioUrl: audioUrl ?? null, 
+            audioUrl: audioUrl ?? null,
             isAi: !!isAi,
           },
           include: { sender: true },
@@ -204,6 +212,9 @@ export function initSocketServer(server: http.Server) {
       console.log(`socket disconnected ${socket.id} reason=${reason}`);
       io.emit("userOffline", { clerkId });
       onlineUsers.delete(clerkId!);
+        if (clerkId) {
+      setOnlineUsers(onlineUsers.size); // update gauge
+    }
       socket.broadcast.emit("userOffline", { clerkId });
     });
   });

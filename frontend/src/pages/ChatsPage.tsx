@@ -400,7 +400,8 @@ export default function ChatsPage() {
         eligibleUsers={eligibleUsers}
         onCreated={(convId: string) => {
           setShowCreateModal(false);
-          navigate(`/conversation/${convId}`);
+          // console.log("CONVid TO navigate:", convId);
+          if(convId)   navigate(`/conversation/${convId}`);
         }}
       />
 

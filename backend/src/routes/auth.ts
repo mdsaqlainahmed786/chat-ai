@@ -75,7 +75,7 @@ authRouter.get("/authorize", async (req, res) => {
       }
     }
 
-    return res.json(user);
+    return res.status(200).json(user);
   } catch (err: any) {
     console.error("ERROR /auth/authorize verify:", err);
     const message = err?.message ?? String(err);

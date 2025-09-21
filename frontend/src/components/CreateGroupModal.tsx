@@ -50,7 +50,8 @@ export const CreateGroupModal = ({
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      onCreated(res.data.conversationId);
+      if (res.data.conversation.id) onCreated(res.data.conversation.id);
+      
     } catch (error) {
       console.error("Error creating group:", error);
     } finally {

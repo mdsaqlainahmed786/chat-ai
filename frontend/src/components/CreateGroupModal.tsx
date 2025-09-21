@@ -85,13 +85,13 @@ export const CreateGroupModal = ({
                 >
                   <input
                     type="checkbox"
-                    checked={selectedUsers.includes(user.id)}
+                    checked={selectedUsers.includes(user.clerkId)}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedUsers([...selectedUsers, user.id]);
+                        setSelectedUsers([...selectedUsers, user.clerkId]);
                       } else {
                         setSelectedUsers(
-                          selectedUsers.filter((id) => id !== user.id)
+                          selectedUsers.filter((id) => id !== user.clerkId)
                         );
                       }
                     }}

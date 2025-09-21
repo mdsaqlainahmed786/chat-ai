@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   node-app:
-    build: ../backend   # path to your backend folder
+    build: ../backend  
     container_name: node-app
     ports:
       - "3000:3000"
@@ -11,19 +11,9 @@ services:
   prometheus:
     image: prom/prometheus
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    - ./prometheus:/etc/prometheus
     ports:
       - "9090:9090"
-    networks:
-      - monitoring
-
-  grafana:
-    image: grafana/grafana
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    ports:
-      - "3001:3000"
     networks:
       - monitoring
 

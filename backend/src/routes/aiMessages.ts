@@ -108,7 +108,7 @@ aiMessagesRouter.post("/message", async (req, res) => {
       });
     }
 
-    return res.json({ ok: true });
+    return res.status(200).json({ ok: true });
   } catch (err) {
     console.error("ai/message error:", err);
     return res.status(500).json({ ok: false, error: "server error" });

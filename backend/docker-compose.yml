@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  node-app:
+    build: ../backend  
+    container_name: node-app
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+    - ./prometheus:/etc/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge

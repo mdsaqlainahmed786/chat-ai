@@ -40,6 +40,12 @@ export const CreateGroupModal = ({
     setLoading(true);
     try {
       const token = await getToken({ template: "default" });
+      if (!token) {
+        console.error("No auth token available");
+        setLoading(false);
+        return;
+      }
+      
       const baseUrl =
         import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
       const res = await axios.post(
@@ -58,6 +64,10 @@ export const CreateGroupModal = ({
       setLoading(false);
     }
   };
+
+  // useEffect(() => {
+
+  // }, [selectedUsers, groupTitle]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -124,7 +134,7 @@ export const CreateGroupModal = ({
             onClick={handleCreate}
             className="bg-purple-500 hover:bg-purple-600 text-white flex items-center cursor-pointer"
             disabled={
-              loading || !groupTitle.trim() || selectedUsers.length === 0
+              loading || !groupTitle.trim() || selectedUsers.length < 3
             }
           >
             {loading && (

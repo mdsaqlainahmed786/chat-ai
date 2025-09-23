@@ -96,7 +96,7 @@ export default function Conversation() {
     setAudioBlob,
     pinnedMessage,
     fetchPinnedMessage,
-    uploadingRecording
+    uploadingRecording,
   } = useConversationSocket(conversationId);
 
   const [text, setText] = useState("");
@@ -265,7 +265,7 @@ export default function Conversation() {
       responseFromAI(content);
       setText("");
       return;
-    } else if (content.includes("@AI")) {
+    } else if (/(@ai)/i.test(content)) {
       responseFromAI(content);
       setText("");
       return;
@@ -444,7 +444,7 @@ export default function Conversation() {
                       <Avatar className="w-10 h-10 border-2 border-purple-200">
                         {conversationInfo?.title === "AI-Assistant" &&
                         !conversationInfo.isGroup ? (
-                          <AiConversationAvatar  className="pb-4"/>
+                          <AiConversationAvatar className="pb-4" />
                         ) : headerAvatar ? (
                           <AvatarImage src={headerAvatar} alt={headerName} />
                         ) : (
@@ -472,7 +472,9 @@ export default function Conversation() {
                         </p>
                       ) : conversationInfo?.isGroup ? (
                         <p className="text-xs sm:text-sm text-gray-500">
-                          {conversationInfo.participants.map((p) => p.user.firstName).join(", ")}
+                          {conversationInfo.participants
+                            .map((p) => p.user.firstName)
+                            .join(", ")}
                         </p>
                       ) : null}
                     </div>
@@ -620,7 +622,7 @@ export default function Conversation() {
                                 message.imageUrl === null &&
                                 message.audioUrl === null &&
                                 !conversationInfo?.pairKey?.startsWith("ai") &&
-                                !message?.content?.startsWith("@AI") && (
+                                !/^@ai/i.test(message?.content ?? "") && (
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                       <Button
@@ -823,7 +825,7 @@ export default function Conversation() {
       <Card className="fixed bottom-0 py-3 left-0 right-0 rounded-none border-x-0 border-b-0 shadow-lg">
         <CardContent className="p-4">
           <div className="max-w-4xl mx-auto">
-            {text.includes("@AI") && (
+            {/(@ai)/i.test(text) && (
               <Card className="mb-4 bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 p-0.5">
                 <CardContent className="bg-white rounded-lg p-3">
                   <div className="flex items-center gap-3">

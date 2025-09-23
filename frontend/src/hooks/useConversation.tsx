@@ -110,8 +110,8 @@ export function useConversationSocket(conversationId?: string) {
           setPinnedMessage(pinnedMessage);
         });
 
-        socket.on("messageUnpinned", () => {
-          setPinnedMessage(null);
+        socket.on("messageUnpinned", ({ pinnedMessage }) => {
+          setPinnedMessage(pinnedMessage);
         });
 
         socket.on("onlineUsers", (users: string[]) => {
@@ -204,32 +204,35 @@ export function useConversationSocket(conversationId?: string) {
     };
   }, [getToken, conversationId]);
 
-    const fetchPinnedMessage = async () => {
-      const token = await getToken({ template: "default" });
-      if (!token) {
-        console.warn("No token from Clerk");
-        return;
-      }
-      setToken(token);
-      try {
-        const baseUrl =
-          import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
-        const res = await axios.get(`${baseUrl}/chat/pinned-message/${conversationId}`, {
+  const fetchPinnedMessage = async () => {
+    const token = await getToken({ template: "default" });
+    if (!token) {
+      console.warn("No token from Clerk");
+      return;
+    }
+    setToken(token);
+    try {
+      const baseUrl =
+        import.meta.env.VITE_SOCKET_URL || "http://localhost:3000";
+      const res = await axios.get(
+        `${baseUrl}/chat/pinned-message/${conversationId}`,
+        {
           headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.data?.pinnedMessage) {
-          setPinnedMessage(res.data.pinnedMessage);
-        } else {
-          setPinnedMessage(null);
         }
-      } catch (err) {
-        console.error("Failed to fetch pinned message:", err);
+      );
+      if (res.data?.pinnedMessage) {
+        setPinnedMessage(res.data.pinnedMessage);
+      } else {
+        setPinnedMessage(null);
       }
-    };
-useEffect(() => {
-if (!conversationId) return;
-  fetchPinnedMessage();
-}, [conversationId, token]);
+    } catch (err) {
+      console.error("Failed to fetch pinned message:", err);
+    }
+  };
+  useEffect(() => {
+    if (!conversationId) return;
+    fetchPinnedMessage();
+  }, [conversationId, token]);
   interface SendMessageResult {
     ok: boolean;
     messageId?: string;
@@ -369,6 +372,6 @@ if (!conversationId) return;
     audioBlob,
     sendAudioMessage,
     pinnedMessage,
-    fetchPinnedMessage
+    fetchPinnedMessage,
   };
 }

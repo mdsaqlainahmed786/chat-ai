@@ -529,7 +529,7 @@ export default function Conversation() {
       {/* Messages Container */}
       <div className="flex-1 overflow-hidden">
         <div className="max-w-4xl mx-auto px-4 pb-32 h-full overflow-y-auto">
-          <div className="space-y-4">
+          <div className="space-y-4 mt-4">
             {loadingInfo ? (
               <div className="space-y-4">
                 {[1, 2, 3, 4, 5].map((i) => (

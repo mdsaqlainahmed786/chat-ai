@@ -137,13 +137,17 @@ export function initSocketServer(server: http.Server) {
       });
     });
 
-    socket.on("unpinMessage", async ({ conversationId }) => {
-      await prisma.conversation.update({
-        where: { id: conversationId },
-        data: { pinnedMessageId: null },
-      });
-      io.to(conversationId).emit("messageUnpinned", { conversationId });
-    });
+socket.on("unpinMessage", async ({ conversationId }) => {
+  await prisma.conversation.update({
+    where: { id: conversationId },
+    data: { pinnedMessageId: null },
+  });
+  io.to(conversationId).emit("messageUnpinned", {
+    conversationId,
+    pinnedMessage: null,
+  });
+});
+
 
     // Typing events now emit clerkId
     socket.on("typing", ({ conversationId }) => {
